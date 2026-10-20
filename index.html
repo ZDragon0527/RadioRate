@@ -1427,10 +1427,18 @@
 
       // Helper to build a benchmark detail card HTML
       function buildBenchmarkCardHtml(bm) {
-        const multiple = hasRate ? (bm.doseUsv / Math.max(0.001, activeTarget.rate)) : null;
-        const multipleText = multiple == null
-          ? '-'
-          : `약 ${multiple >= 10 ? Math.round(multiple).toLocaleString() : multiple.toFixed(1)}배`;
+        // 상단 '바나나 환산'과 같은 방향: 현재 1시간 선량 ÷ 이 항목 선량
+        const ratio = hasRate ? (activeTarget.rate / bm.doseUsv) : null;
+        let multipleText = '-';
+        if (ratio != null) {
+          if (ratio >= 10) {
+            multipleText = `이 항목의 약 ${Math.round(ratio).toLocaleString()}배`;
+          } else if (ratio >= 0.1) {
+            multipleText = `이 항목의 약 ${ratio.toFixed(1)}배`;
+          } else {
+            multipleText = `이 항목의 약 ${Math.round(1 / Math.max(ratio, 1e-9)).toLocaleString()}분의 1`;
+          }
+        }
 
         return `
           <div class="rounded-xl border border-slate-200 p-4 bg-slate-50/50 hover:bg-white hover:shadow-sm transition flex flex-col justify-between">
@@ -1447,7 +1455,7 @@
 
             <div class="mt-4 pt-3 border-t border-slate-200/80">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-500 font-medium">현재 1시간 선량 대비</span>
+                <span class="text-slate-500 font-medium">현재 1시간 선량 =</span>
                 <span class="font-extrabold text-sky-700">${multipleText}</span>
               </div>
             </div>
