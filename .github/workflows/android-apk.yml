@@ -35,6 +35,10 @@ jobs:
           node-version: 22
 
       - uses: android-actions/setup-android@v3
+        with:
+          # 기본값의 'tools' 패키지는 SDK 저장소에서 더 이상 제공되지 않아 실패한다.
+          # 플랫폼·빌드도구는 Gradle이 라이선스 수락 후 필요한 버전을 자동으로 받는다.
+          packages: 'platform-tools'
 
       - name: Capacitor 의존성 설치 및 동기화
         run: |
