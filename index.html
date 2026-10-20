@@ -476,7 +476,7 @@
         </div>
       </section>
 
-      <!-- Everyday Life Radiation Comparison Cards (6 Tangible Benchmarks) -->
+      <!-- Everyday Life Radiation Comparison Cards -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
           <div>
@@ -651,70 +651,57 @@
     };
 
     // Everyday comparison reference items (for resident communication)
+    // source: 카드 하단에 표시하는 출처·근거 (공개 화면에 그대로 노출됨)
     const EVERYDAY_BENCHMARKS = [
       {
         id: 'banana',
         title: '바나나 1개 섭취 (자연 칼륨-40)',
         doseUsv: 0.1,
-        unitLabel: '1회 섭취 시 약 0.1 μSv',
         category: '식품 자연방사선',
         badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
-        barColor: 'bg-amber-500',
-        desc: '바나나에 풍부한 칼륨(K-40)에서 나오는 극미량의 자연방사선으로, 체내에 축적되지 않고 자연 배출됩니다.'
+        desc: '바나나에 풍부한 칼륨(K-40)에서 나오는 극미량의 자연방사선으로, 체내에 축적되지 않고 자연 배출됩니다.',
+        source: '근거: 바나나 1개 섭취 시 약 0.1 μSv (칼륨-40 섭취 선량의 일반 환산값)'
       },
       {
         id: 'dental',
         title: '치과 구강 X-ray 촬영 (1회)',
         doseUsv: 5.0,
-        unitLabel: '1회 촬영 시 약 5.0 μSv',
         category: '일상 의료검진',
         badgeColor: 'bg-sky-50 text-sky-700 border-sky-200',
-        barColor: 'bg-sky-500',
-        desc: '치과 진료 시 치아 상태를 확인하기 위해 촬영하는 간단한 구강 엑스레이 1회 선량입니다.'
+        desc: '치과 진료 시 치아 상태를 확인하기 위해 촬영하는 간단한 구강 엑스레이 1회 선량입니다.',
+        source: '근거: 치과 구내 촬영 1회 약 5 μSv (일반 문헌값)'
       },
       {
         id: 'chestXray',
         title: '병원 흉부 X-ray 촬영 (1회)',
         doseUsv: 100.0,
-        unitLabel: '1회 촬영 시 약 100 μSv (0.1 mSv)',
         category: '건강검진 기준',
         badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-        barColor: 'bg-indigo-500',
-        desc: '일반 건강검진에서 가장 흔히 촬영하는 흉부 방사선 검사 1회 시 받는 선량입니다.'
+        desc: '일반 건강검진에서 가장 흔히 촬영하는 흉부 방사선 검사 1회 시 받는 선량입니다.',
+        source: '출처: 서울대학교 원자력 위키 (흉부 엑스선 촬영 약 0.1 mSv)'
       },
       {
         id: 'flight',
         title: '서울 ↔ 뉴욕 항공여행 (왕복)',
-        doseUsv: 160.0,
+        doseUsv: 155.0,
+        doseRange: [140, 170],      // KINS 인천→뉴욕 편도 0.07~0.085 mSv × 왕복
         compareHours: 30,           // 인천↔JFK 왕복 비행시간(약 14시간 + 약 15.7시간)
-        compareLabel: '왕복 비행시간(약 30시간) 동안 공간선량 =',
-        unitLabel: '왕복 비행 시 약 160 μSv (시간당 ~6 μSv/h)',
+        compareLabel: '같은 시간(약 30시간) 공간선량 =',
         category: '우주방사선',
         badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
-        barColor: 'bg-purple-500',
-        desc: '고도 10km 상공 비행 중 우주방사선 영향으로 원전 주변 평시 선량률의 약 70~80배를 시간당 받게 됩니다.'
-      },
-      {
-        id: 'legalLimit',
-        title: '일반인 연간 법정 선량한도',
-        doseUsv: 1000.0,
-        unitLabel: '연간 1,000 μSv (1.0 mSv / 자연·의료 제외)',
-        category: '원자력안전법 기준',
-        badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        barColor: 'bg-emerald-600',
-        desc: '원자력안전법이 정한 일반 국민의 연간 인공방사선 허용 한도입니다. 실제 원전 주변 영향은 이 기준의 1~3% 미만입니다.'
+        desc: '', // 측정값으로 자동 계산 (buildBenchmarkCardHtml)
+        source: '출처: 한국원자력안전기술원(KINS), 인천→뉴욕 편도 0.07~0.085 mSv(태양 활동에 따라 변동)의 왕복 환산'
       },
       {
         id: 'naturalKr',
         title: '대한민국 국민 연간 자연방사선량',
-        doseUsv: 3000.0,
+        doseUsv: 3080.0,
         compareHours: 8760,
         compareLabel: '1년 누적 공간선량 =',
-        unitLabel: '연간 약 3,000 μSv (3.0 mSv)',
         category: '자연환경 평균',
         badgeColor: 'bg-teal-50 text-teal-700 border-teal-200',
-        barColor: 'bg-teal-600',
-        desc: '토양·우주·공기(라돈)·음식물 등을 통해 대한민국 국민 누구나 매년 자연적으로 받는 평균 방사선량입니다.'
+        desc: '토양·우주·공기(라돈)·음식물 등을 통해 대한민국 국민 누구나 매년 자연적으로 받는 평균 방사선량입니다.',
+        source: '출처: 한국원자력안전기술원(KINS) 2009년 조사 (연간 약 3.08 mSv)'
       }
     ];
 
@@ -1429,22 +1416,50 @@
         }
       });
 
+      // 비율 r(현재 선량 ÷ 항목 선량)을 '약 n배' 또는 '약 n분의 1' 형태로 바꾼다
+      function ratioParts(r) {
+        if (r >= 10) return { kind: '배', num: Math.round(r).toLocaleString() };
+        if (r >= 0.1) return { kind: '배', num: r.toFixed(1) };
+        return { kind: '분의 1', num: Math.round(1 / Math.max(r, 1e-9)).toLocaleString() };
+      }
+
       // Helper to build a benchmark detail card HTML
       function buildBenchmarkCardHtml(bm) {
-        // 상단 '바나나 환산'과 같은 방향: 현재 1시간 선량 ÷ 이 항목 선량
+        // 상단 '바나나 환산'과 같은 방향: 현재 선량 ÷ 이 항목 선량
         // 비교 기간: 기본 1시간, 항목에 따라 비행시간·1년 누적으로 맞춘다
         const compareHours = bm.compareHours || 1;
         const compareLabel = bm.compareLabel || '현재 1시간 선량 =';
-        const ratio = hasRate ? (activeTarget.rate * compareHours / bm.doseUsv) : null;
+        const [doseMin, doseMax] = bm.doseRange || [bm.doseUsv, bm.doseUsv];
+        const doseLabel = doseMin === doseMax
+          ? `${doseMin.toLocaleString()} μSv`
+          : `${doseMin.toLocaleString()}~${doseMax.toLocaleString()} μSv`;
+
         let multipleText = '-';
-        if (ratio != null) {
-          if (ratio >= 10) {
-            multipleText = `이 항목의 약 ${Math.round(ratio).toLocaleString()}배`;
-          } else if (ratio >= 0.1) {
-            multipleText = `이 항목의 약 ${ratio.toFixed(1)}배`;
+        let desc = bm.desc;
+        if (hasRate) {
+          const exposure = activeTarget.rate * compareHours;
+          // 항목 선량이 클수록 비율이 작아지므로 doseMax → 작은 비율, doseMin → 큰 비율
+          const lo = ratioParts(exposure / doseMax);
+          const hi = ratioParts(exposure / doseMin);
+          if (doseMin === doseMax) {
+            multipleText = `이 항목의 약 ${lo.num}${lo.kind}`;
+          } else if (lo.kind === hi.kind) {
+            // '분의 1'은 숫자가 클수록 작은 값이므로 작은 숫자부터 표시
+            const [a, b] = lo.kind === '분의 1' ? [hi.num, lo.num] : [lo.num, hi.num];
+            multipleText = a === b ? `이 항목의 약 ${a}${lo.kind}` : `이 항목의 약 ${a}~${b}${lo.kind}`;
           } else {
-            multipleText = `이 항목의 약 ${Math.round(1 / Math.max(ratio, 1e-9)).toLocaleString()}분의 1`;
+            multipleText = `이 항목의 약 ${lo.num}${lo.kind} ~ ${hi.num}${hi.kind}`;
           }
+
+          if (bm.id === 'flight') {
+            const perHourMin = doseMin / compareHours;
+            const perHourMax = doseMax / compareHours;
+            const xMin = Math.round(perHourMin / activeTarget.rate);
+            const xMax = Math.round(perHourMax / activeTarget.rate);
+            desc = `고도 10km 상공 비행 중에는 우주방사선 영향으로 시간당 약 ${perHourMin.toFixed(1)}~${perHourMax.toFixed(1)} μSv를 받습니다. 이는 현재 측정값(${activeTarget.rate.toFixed(3)} μSv/h)의 약 ${xMin === xMax ? xMin : `${xMin}~${xMax}`}배입니다.`;
+          }
+        } else if (bm.id === 'flight') {
+          desc = '고도 10km 상공 비행 중에는 우주방사선 영향으로 지상보다 높은 선량을 받습니다.';
         }
 
         return `
@@ -1454,23 +1469,24 @@
                 <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${bm.badgeColor}">
                   ${bm.category}
                 </span>
-                <span class="text-xs font-extrabold text-slate-900">${bm.doseUsv.toLocaleString()} μSv</span>
+                <span class="text-xs font-extrabold text-slate-900">${doseLabel}</span>
               </div>
               <h4 class="text-sm font-bold text-slate-900">${bm.title}</h4>
-              <p class="text-xs text-slate-500 mt-1 leading-relaxed">${bm.desc}</p>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">${desc}</p>
             </div>
 
             <div class="mt-4 pt-3 border-t border-slate-200/80">
-              <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center justify-between gap-2 text-xs">
                 <span class="text-slate-500 font-medium">${compareLabel}</span>
-                <span class="font-extrabold text-sky-700">${multipleText}</span>
+                <span class="font-extrabold text-sky-700 text-right whitespace-nowrap">${multipleText}</span>
               </div>
+              <p class="text-[10px] text-slate-400 mt-2 leading-snug">${bm.source}</p>
             </div>
           </div>
         `;
       }
 
-      // Desktop: Everyday comparison cards (all 6 cards)
+      // Desktop: Everyday comparison cards (all cards)
       const grid = document.getElementById('everydayComparisonGrid');
       if (grid) {
         grid.innerHTML = EVERYDAY_BENCHMARKS.map(bm => buildBenchmarkCardHtml(bm)).join('');
