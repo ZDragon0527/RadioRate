@@ -32,7 +32,7 @@ GitHub Actions (30분 간격)
 - **수집 주기**: `.github/workflows/update-radiation.yml`의 `cron`(기본 30분). 줄이면 API 호출량(1회당 5건)과 Actions 사용 시간이 늘어납니다. 일일 호출 한도는 공공데이터포털 활용신청 상세에서 확인하세요.
 - **수집 실패 알림**: 5개 본부 모두 실패하면 워크플로가 실패로 표시됩니다(GitHub 알림 메일).
 - **예약 실행 중지**: 저장소에 일정 기간 활동이 없으면 GitHub가 예약 실행을 멈출 수 있습니다. Actions 탭에서 다시 켜면 됩니다.
-- **단위**: 응답 값이 5보다 크면 nSv/h로 보고 1000으로 나눠 μSv/h로 환산합니다. 실제 응답 단위를 API 명세로 확인하세요(`data/radiation.json`의 `unitConverted`, `raw` 필드에 원본 보존).
+- **단위**: 응답 값(`value`)을 μSv/h로 보고 변환 없이 표시합니다(실제 응답 예: `0.093`). 원본 응답은 `data/radiation.json`의 `raw` 필드에 보존됩니다.
 
 ## 파일 구성
 

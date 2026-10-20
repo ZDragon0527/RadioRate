@@ -74,14 +74,9 @@ export function parseResponse(xml) {
   const stations = [];
   for (const fields of parseItems(xml)) {
     const rawValue = pick(fields, ['value', 'radiorate', 'doseRate']);
-    let value = rawValue == null ? NaN : Number(rawValue);
-    let unitConverted = false;
-    // 일부 응답은 nSv/h(예: 68)로 올 수 있어 μSv/h로 환산한다. 실제 단위는 API 명세로 확인 필요.
-    if (Number.isFinite(value) && value > 5) {
-      value = value / 1000;
-      unitConverted = true;
-    }
-    if (!Number.isFinite(value) || value <= 0 || value > 1000) {
+    // 응답 값은 μSv/h(예: 0.093). 높은 값도 그대로 표시해야 하므로 환산·상한 제외를 하지 않는다.
+    const value = rawValue == null || rawValue === '' ? NaN : Number(rawValue);
+    if (!Number.isFinite(value) || value < 0) {
       warnings.push(`값 해석 불가 항목 제외: ${JSON.stringify(fields)}`);
       continue;
     }
@@ -90,7 +85,6 @@ export function parseResponse(xml) {
       expl: pick(fields, ['expl', 'locName', 'stationName']) || pick(fields, ['name']) || '측정소',
       time: pick(fields, ['time', 'measTime', 'dataTime']) || '',
       value: Math.round(value * 1000) / 1000,
-      unitConverted,
       raw: fields
     });
   }
