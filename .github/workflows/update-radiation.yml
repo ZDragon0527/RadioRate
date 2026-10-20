@@ -1,0 +1,62 @@
+name: 방사선량 데이터 수집 및 배포
+
+on:
+  schedule:
+    # 30분 간격(UTC 기준, 정각 혼잡을 피해 7분·37분). 간격을 줄이면 API 호출량·Actions 사용 시간이 늘어난다.
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  collect-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: 직전 배포본 데이터 가져오기
+        run: curl -fsSL --max-time 20 "${{ steps.pages.outputs.base_url }}/data/radiation.json" -o prev.json || echo '{}' > prev.json
+
+      - name: 사이트 구성
+        run: |
+          mkdir -p _site
+          cp -r index.html manifest.webmanifest .nojekyll assets _site/
+
+      - name: 공공데이터포털 API 수집
+        id: collect
+        env:
+          RADIORATE_SERVICE_KEY: ${{ secrets.RADIORATE_SERVICE_KEY }}
+        run: node scripts/fetch-radiation.mjs --prev prev.json --out _site/data/radiation.json || echo "failed=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: 수집 실패 알림
+        if: steps.collect.outputs.failed == 'true'
+        run: |
+          echo "::error::5개 본부 모두 데이터 수집에 실패했습니다. 위 '공공데이터포털 API 수집' 단계 로그를 확인하세요. (직전 값으로 배포됨)"
+          exit 1

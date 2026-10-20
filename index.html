@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="원자력발전소 주변 환경방사선량률 모니터링 및 일상 방사선량 비교 웹앱" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="원전 방사선량" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icon.svg" />
+  <title>한수원 원자력발전소 실시간 주변 방사선량 모니터링</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+    }
+    .pulse-dot {
+      animation: pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulseRing {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.18); }
+    }
+    @keyframes shakeError {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .shake {
+      animation: shakeError 0.35s ease-in-out;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-30 bg-slate-900 text-white shadow-lg border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <!-- Brand Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-md shrink-0">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <div class="hidden sm:flex items-center gap-2">
+              <span class="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30">공공데이터포털</span>
+              <span id="apiModeBadge" class="text-xs font-medium px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+                <span id="apiModeText">데이터 불러오는 중</span>
+              </span>
+            </div>
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white sm:mt-0.5 whitespace-nowrap truncate">
+              <span class="sm:hidden">원전 주변 실시간 방사선량</span>
+              <span class="hidden sm:inline">원자력발전소 실시간 주변 방사선량 모니터링</span>
+            </h1>
+          </div>
+        </div>
+
+        <!-- Right Controls: Last collected time, Refresh -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="hidden md:flex items-center gap-1.5 text-xs text-slate-300 bg-slate-800/90 px-3 py-1.5 rounded-lg border border-slate-700">
+            <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>최근 수집:</span>
+            <strong id="lastUpdatedTime" class="text-white font-semibold">-</strong>
+          </div>
+
+          <button id="btnManualRefresh" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition">
+            <svg id="refreshIcon" class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>새로고침</span>
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-bar: Headquarters Selector (Default: WS 월성) & View Mode Filter -->
+    <div class="bg-slate-800/95 border-t border-slate-700/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <!-- Mobile Plant Dropdown (Mobile Only) -->
+        <div class="flex sm:hidden items-center gap-2 w-full">
+          <label for="mobilePlantSelect" class="text-xs font-semibold text-slate-300 shrink-0">본부 선택:</label>
+          <select id="mobilePlantSelect" aria-label="원자력본부 선택" class="flex-1 bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <option value="WS">월성본부 (기본)</option>
+            <option value="ALL">전체 5개 본부 통합</option>
+            <option value="KR">고리본부</option>
+            <option value="SU">새울본부</option>
+            <option value="YK">한빛본부</option>
+            <option value="UJ">한울본부</option>
+          </select>
+        </div>
+
+        <!-- Plant Tabs (Desktop sm+ Only, Default: 월성 WS) -->
+        <div class="hidden sm:flex items-center gap-1.5 flex-wrap" id="plantTabContainer">
+          <span class="text-xs font-semibold text-slate-400 mr-1 shrink-0">원자력본부 선택:</span>
+          <button type="button" data-plant="WS" class="plant-tab px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 bg-sky-500 text-white shadow-sm">
+            월성본부 (기본)
+          </button>
+          <button type="button" data-plant="ALL" class="plant-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 bg-slate-700/70 text-slate-300 hover:bg-slate-700 hover:text-white">
+            전체 5개 본부 통합
+          </button>
+          <button type="button" data-plant="KR" class="plant-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 bg-slate-700/70 text-slate-300 hover:bg-slate-700 hover:text-white">
+            고리본부
+          </button>
+          <button type="button" data-plant="SU" class="plant-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 bg-slate-700/70 text-slate-300 hover:bg-slate-700 hover:text-white">
+            새울본부
+          </button>
+          <button type="button" data-plant="YK" class="plant-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 bg-slate-700/70 text-slate-300 hover:bg-slate-700 hover:text-white">
+            한빛본부
+          </button>
+          <button type="button" data-plant="UJ" class="plant-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 bg-slate-700/70 text-slate-300 hover:bg-slate-700 hover:text-white">
+            한울본부
+          </button>
+        </div>
+
+        <!-- Screen View Mode Switcher -->
+        <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-700">
+          <button type="button" data-view="integrated" class="view-tab px-2.5 py-1 rounded-md text-xs font-semibold bg-sky-600 text-white transition">
+            전체 보기
+          </button>
+          <button type="button" data-view="dashboard" class="view-tab px-2.5 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">
+            측정 현황
+          </button>
+          <button type="button" data-view="communication" class="view-tab px-2.5 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">
+            일상 방사선 비교
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Data delay / load failure notice -->
+    <div id="dataStatusBanner" role="status" class="hidden rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-xs sm:text-sm font-medium px-4 py-3"></div>
+
+    <!-- Hero Banner: Selected Plant Status & Safety Assurance Summary -->
+    <section class="relative rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-900">
+      <img src="assets/hero.jpg" alt="원자력발전소 주변 청정 환경 모니터링" class="absolute inset-0 w-full h-full object-cover opacity-35 max-w-full" />
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/80 to-slate-900/55"></div>
+
+      <div class="relative z-10 p-5 sm:p-7 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div class="space-y-2.5 max-w-2xl">
+          <div id="heroSafetyBadgeWrap" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-500/20 border border-slate-400/40 text-slate-200 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-current pulse-dot"></span>
+            <span id="heroSafetyBadge">측정 데이터를 불러오는 중입니다</span>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-3">
+            <h2 id="heroPlantTitle" class="text-lg sm:text-3xl font-extrabold text-white tracking-tight whitespace-nowrap">
+              원전 주변 실시간 방사선량
+            </h2>
+            <span id="heroPlantCodeBadge" class="text-xs font-mono px-2.5 py-0.5 rounded bg-white/10 text-sky-300 border border-white/15">
+              경상북도 경주시 양남면·문무대왕면·감포읍 일원
+            </span>
+          </div>
+          <p id="heroPlantDesc" class="text-sm text-slate-200 leading-relaxed">
+            원자력발전소 주변 환경방사선 감시초소에서 측정된 공간감마선량률 현황입니다.
+          </p>
+        </div>
+
+        <!-- Hero Main Gauge Box -->
+        <div class="bg-slate-900/85 backdrop-blur-md border border-slate-700/80 rounded-2xl p-4 sm:p-5 min-w-[280px] sm:min-w-[330px] shadow-xl">
+          <div class="flex items-center justify-between text-xs text-slate-300 mb-1">
+            <span id="heroAvgLabel">월성본부 평균 방사선량률</span>
+            <span id="heroStatusBadge" class="px-2 py-0.5 rounded bg-slate-500/20 text-slate-300 font-semibold border border-slate-500/30">-</span>
+          </div>
+          <div class="flex items-baseline gap-2 my-1">
+            <span id="heroAvgValue" class="text-4xl sm:text-5xl font-extrabold text-sky-400 tracking-tight">-</span>
+            <span class="text-base font-semibold text-slate-300">μSv/h</span>
+          </div>
+          <!-- Natural Background Spectrum Bar -->
+          <div class="mt-3 space-y-1.5">
+            <div class="flex justify-between text-[11px] text-slate-300">
+              <span>현재 수치 위치</span>
+              <span>국내 자연방사선 (0.05 ~ 0.30 μSv/h)</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden relative">
+              <div class="h-full bg-gradient-to-r from-emerald-400 via-sky-400 to-amber-400 w-full opacity-80"></div>
+              <div id="heroSpectrumMarker" class="absolute top-0 bottom-0 w-2 bg-white rounded-full shadow border border-slate-900 transition-all duration-300" style="left: 22%;"></div>
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-400">
+              <span>0.05 μSv/h (최저 자연수준)</span>
+              <span>0.15 μSv/h</span>
+              <span>0.30 μSv/h (자연 상한)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 Key KPI Summary Cards -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Card 1: Current Average -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/90 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">선택 지역 평균 선량률</span>
+          <span class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </span>
+        </div>
+        <div class="mt-3">
+          <div class="flex items-baseline gap-1.5">
+            <span id="kpiAvgRate" class="text-2xl sm:text-3xl font-extrabold text-slate-900">-</span>
+            <span class="text-xs font-semibold text-slate-500">μSv/h</span>
+          </div>
+          <p id="kpiStationCountText" class="text-xs text-slate-500 mt-1">측정소 산술평균</p>
+        </div>
+      </div>
+
+      <!-- Card 2: Min / Max Station -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/90 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">최저 / 최고 측정값</span>
+          <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+          </span>
+        </div>
+        <div class="mt-3">
+          <div class="flex items-baseline gap-1.5">
+            <span id="kpiMinMaxRate" class="text-xl sm:text-2xl font-extrabold text-slate-900">-</span>
+            <span class="text-xs font-semibold text-slate-500">μSv/h</span>
+          </div>
+          <p id="kpiMinMaxLocation" class="text-xs text-slate-500 mt-1">-</p>
+        </div>
+      </div>
+
+      <!-- Card 3: Comparison with Chest X-Ray -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/90 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">흉부 X-ray 1회(100μSv) 대비</span>
+          <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </span>
+        </div>
+        <div class="mt-3">
+          <div class="flex items-baseline gap-1.5">
+            <span id="kpiXrayRatio" class="text-2xl sm:text-3xl font-extrabold text-emerald-600">-</span>
+            <span class="text-xs font-semibold text-slate-500">수준 (1시간 기준)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Annual Dose Conversion -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/90 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">연간 자연선량 환산 비교</span>
+          <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+            </svg>
+          </span>
+        </div>
+        <div class="mt-3">
+          <div class="flex items-baseline gap-1.5">
+            <span id="kpiAnnualEquiv" class="text-2xl sm:text-3xl font-extrabold text-slate-900">-</span>
+            <span class="text-xs font-semibold text-slate-500">mSv/년 (공간선량 환산)</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">국내 평균 자연방사선(약 3.0 mSv/년) 이내</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION A: REAL-TIME MONITORING DASHBOARD -->
+    <div id="sectionMonitoring" class="space-y-6">
+
+      <!-- All 5 Plants Summary Comparison Bar (Always visible when ALL or for quick comparison across headquarters) -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-2 h-5 rounded-full bg-sky-600"></span>
+              5개 원자력본부 실시간 주변 방사선량 비교 (클릭 시 해당 본부로 전환)
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">
+              월성본부를 기본으로 고리·새울·한빛·한울본부 및 5개 본부 통합 현황을 즉시 전환하여 비교할 수 있습니다.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 평시 정상 (0.05 ~ 0.30 μSv/h)
+            </span>
+          </div>
+        </div>
+
+        <div id="plantSummaryCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <!-- Dynamically populated by JS -->
+        </div>
+      </section>
+
+      <!-- Charts Row: Station Bar Chart + 24h Trend Line Chart -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left 7 cols: Station-by-Station Bar Chart -->
+        <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 id="stationChartTitle" class="text-base font-bold text-slate-900">
+                월성원자력본부 측정소별 방사선량률 (μSv/h)
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                막대를 클릭하면 하단 '일상 속 방사선량 비교 계산기'에 해당 측정소 수치가 즉시 반영됩니다.
+              </p>
+            </div>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">
+              단위: μSv/h
+            </span>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="stationBarChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Right 5 cols: 24-Hour Time Series Stability Chart -->
+        <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 id="trendChartTitle" class="text-base font-bold text-slate-900">
+                최근 24시간 주변 방사선량 추이
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                30분 간격 수집값 기준 · 선택 본부 평균선량률과 전국 자연방사선 평균선 비교
+              </p>
+            </div>
+            <span id="trendRangeBadge" class="text-xs font-medium text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+              추이 데이터 수집 중
+            </span>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="hourlyTrendChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Detailed Monitoring Stations Grid -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 id="stationGridTitle" class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-2 h-5 rounded-full bg-indigo-600"></span>
+              측정소별 상세 현황
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">
+              각 측정소 카드를 클릭하면 하단 '일상 속 방사선량 비교'의 기준 측정소로 선택됩니다.
+            </p>
+          </div>
+
+          <!-- Search & Sort Controls -->
+          <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div class="relative flex-1 sm:flex-initial">
+              <input id="stationSearchInput" type="text" placeholder="측정소명·지역 검색 (예: 읍천, 나산)" class="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 w-full sm:w-56" />
+              <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <select id="stationSortSelect" class="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="default">기본 측정소 순</option>
+              <option value="desc">측정값 높은 순</option>
+              <option value="asc">측정값 낮은 순</option>
+              <option value="name">측정소 이름 순</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Mobile-only Collapse/Expand Toggle Button for Station Cards -->
+        <div class="sm:hidden mb-3">
+          <button id="btnMobileStationToggle" type="button" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-between transition">
+            <span id="mobileStationToggleText">측정소 카드 목록 펼치기</span>
+            <svg id="mobileStationToggleIcon" class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+
+        <div id="stationCardsContainer" class="hidden sm:grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <!-- Dynamically populated by JS -->
+        </div>
+      </section>
+    </div>
+
+    <!-- SECTION B: RESIDENT COMMUNICATION & EVERYDAY RADIATION COMPARISON -->
+    <div id="sectionCommunication" class="space-y-6">
+
+      <!-- Resident-Friendly Banner & Interactive Calculator -->
+      <section class="bg-gradient-to-br from-sky-900 via-slate-900 to-indigo-950 text-white rounded-2xl shadow-md border border-sky-800/60 p-5 sm:p-7">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div class="space-y-2 max-w-2xl">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-300 border border-sky-400/30">
+              알기 쉬운 방사선 비교
+            </span>
+            <h3 class="text-xl sm:text-2xl font-extrabold tracking-tight">
+              "지금 발전소 주변 방사선량, 우리 일상생활과 비교하면 어느 정도일까요?"
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              방사선은 공기·토양·음식물·우주 등 자연 어디에나 존재합니다. 현재 측정된 <strong id="commSelectedTargetName" class="text-sky-300 underline decoration-sky-400/60 underline-offset-4">월성원자력본부 평균</strong> 실시간 측정값(<strong id="commSelectedRateText" class="text-white">-</strong>)을 일상 속 친숙한 활동과 직접 비교해 보세요.
+            </p>
+          </div>
+
+          <!-- Interactive Exposure Duration Selector -->
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 min-w-[280px] sm:min-w-[340px]">
+            <div class="flex items-center justify-between text-xs text-sky-200 mb-2">
+              <span class="font-semibold">기간별 누적 선량 시뮬레이터</span>
+              <span id="simSelectedStationBadge" class="px-2 py-0.5 rounded bg-sky-500/30 text-white font-bold">월성본부 평균</span>
+            </div>
+
+            <div class="grid grid-cols-4 gap-1.5 mb-3" id="durationButtonsContainer">
+              <button type="button" data-hours="1" class="dur-btn py-1.5 rounded-lg text-xs font-bold bg-sky-500 text-white shadow">
+                1시간
+              </button>
+              <button type="button" data-hours="24" class="dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20">
+                하루 (24h)
+              </button>
+              <button type="button" data-hours="720" class="dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20">
+                1개월 (30일)
+              </button>
+              <button type="button" data-hours="8760" class="dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20">
+                1년 (365일)
+              </button>
+            </div>
+
+            <div class="bg-slate-950/60 rounded-xl p-3 border border-white/10 flex items-center justify-between">
+              <div>
+                <div class="text-[11px] text-slate-400" id="simCumulativeLabel">1시간 누적 공간선량</div>
+                <div class="flex items-baseline gap-1.5 mt-0.5">
+                  <span id="simCumulativeValue" class="text-2xl font-extrabold text-emerald-400">-</span>
+                  <span class="text-xs font-semibold text-slate-300">μSv</span>
+                  <span id="simCumulativeMsv" class="text-[11px] text-slate-400 ml-1"></span>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-[11px] text-slate-400">바나나 환산</div>
+                <div id="simBananaEquiv" class="text-sm font-bold text-amber-300 mt-0.5">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Everyday Life Radiation Comparison Cards (6 Tangible Benchmarks) -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-2 h-5 rounded-full bg-emerald-600"></span>
+              일상 속 방사선량 vs 현재 발전소 주변 측정값 한눈에 비교하기
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">
+              현재 선택된 <strong id="compSectionSubTitle" class="text-slate-700">-</strong> 측정치와 일상생활·의료·자연방사선 기준치를 비교한 결과입니다.
+            </p>
+          </div>
+          <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg font-medium">
+            1 mSv(밀리시버트) = 1,000 μSv(마이크로시버트)
+          </div>
+        </div>
+
+        <!-- Mobile-only Item Title Selection & Selected Detail View -->
+        <div class="md:hidden space-y-3">
+          <p class="text-xs font-semibold text-slate-600">비교할 항목 제목을 선택하면 상세 내용이 표시됩니다:</p>
+          <div id="mobileBenchmarkSelectGrid" class="grid grid-cols-2 gap-2">
+            <!-- Dynamically populated by JS -->
+          </div>
+          <div id="mobileBenchmarkDetailContainer" class="pt-1">
+            <!-- Selected benchmark detail rendered here by JS -->
+          </div>
+        </div>
+
+        <!-- Desktop Full Grid (md and up) -->
+        <div id="everydayComparisonGrid" class="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated by JS -->
+        </div>
+
+        <!-- Visual Scale Infobar: Logarithmic / Step Ladder Comparison -->
+        <div class="mt-6 bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200">
+          <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>현재 측정값 한 줄 요약</span>
+          </h4>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/90">
+            <p id="paBriefingSummaryText" class="text-xs sm:text-sm text-slate-700 leading-relaxed">
+              측정 데이터를 불러오면 요약이 표시됩니다.
+            </p>
+            <button id="btnCopyBriefingText" type="button" class="shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>요약 복사</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Resident Q&A Accordion Section -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5 sm:p-6">
+        <h3 class="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
+          <span class="w-2 h-5 rounded-full bg-amber-500"></span>
+          주민들이 가장 궁금해하는 환경방사선 알기 쉬운 Q&amp;A
+        </h3>
+        <div class="space-y-2.5" id="faqAccordionContainer">
+          <!-- FAQ 1 -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <button type="button" data-faq="1" class="faq-toggle w-full px-4 py-3.5 text-left bg-slate-50/70 hover:bg-slate-100/80 flex items-center justify-between gap-2 transition">
+              <span class="text-xs sm:text-sm font-bold text-slate-800">Q1. 비나 눈이 오는 날에는 왜 평소보다 방사선량 수치가 일시적으로 올라가나요?</span>
+              <svg class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div id="faq-content-1" class="px-4 py-3.5 text-xs sm:text-sm text-slate-600 bg-white border-t border-slate-100 leading-relaxed">
+              대기 중에는 토양과 암석에서 자연적으로 방출된 라돈(Rn) 자핵종이 미세먼지 등과 결합해 떠다니고 있습니다. 비나 눈이 내리면 이 자연 방사성 물질들이 빗방울에 씻겨 지표면으로 함께 내려오면서 측정기 주변의 선량률이 일시적으로 <strong>0.02 ~ 0.08 μSv/h 가량 상승</strong>할 수 있습니다. 이는 원전 가동과는 무관한 전국 공통의 자연현상이며, 비가 그치면 짧은 시간(반감기 약 30분 내외) 안에 원래 수치로 회복됩니다.
+            </div>
+          </div>
+
+          <!-- FAQ 2 -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <button type="button" data-faq="2" class="faq-toggle w-full px-4 py-3.5 text-left bg-slate-50/70 hover:bg-slate-100/80 flex items-center justify-between gap-2 transition">
+              <span class="text-xs sm:text-sm font-bold text-slate-800">Q2. 측정소마다 수치(예: 0.058 ~ 0.082 μSv/h)가 조금씩 다른 이유는 무엇인가요?</span>
+              <svg class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div id="faq-content-2" class="hidden px-4 py-3.5 text-xs sm:text-sm text-slate-600 bg-white border-t border-slate-100 leading-relaxed">
+              환경방사선량은 측정소가 설치된 지점의 <strong>토양 성분(화강암 분포 여부 등), 고도, 해안가 인접도</strong>에 따라 자연적인 배경 수치가 다릅니다. 예를 들어 암석 지대보다 바닷가(해수면) 인근이 자연방사선이 더 낮게 측정되는 경향이 있으며, 우리나라 전역의 자연방사선량은 지역에 따라 <strong>0.05 ~ 0.30 μSv/h</strong> 범위에서 자연스럽게 분포합니다.
+            </div>
+          </div>
+
+          <!-- FAQ 3 -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <button type="button" data-faq="3" class="faq-toggle w-full px-4 py-3.5 text-left bg-slate-50/70 hover:bg-slate-100/80 flex items-center justify-between gap-2 transition">
+              <span class="text-xs sm:text-sm font-bold text-slate-800">Q3. 원전 주변 방사선량 데이터는 누가, 어떻게 검증하고 공개하나요?</span>
+              <svg class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div id="faq-content-3" class="hidden px-4 py-3.5 text-xs sm:text-sm text-slate-600 bg-white border-t border-slate-100 leading-relaxed">
+              발전소 주변 환경방사선감시기(ERMS)가 24시간 실시간으로 측정한 자료는 <strong>공공데이터포털 오픈API(`B552041/radiorate`)</strong>를 통해 투명하게 공개될 뿐만 아니라, 규제 전문기관인 <strong>한국원자력안전기술원(KINS) 국가환경방사선자동감시망(IERNet)</strong> 및 지자체·지역 주민이 참여하는 <strong>민간환경감시기구</strong>에서 상시 교차 측정·검증하고 있습니다.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <div>
+        데이터 출처: 공공데이터포털 한국수력원자력(주)_원자력발전소 실시간 주변 방사선 량 (<code class="text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded break-all">https://apis.data.go.kr/B552041/radiorate/getradiorate</code>)
+      </div>
+      <div>
+        약 30분 간격 자동 수집 · 측정 시각은 각 측정소 카드에 표시
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden items-center gap-2.5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 text-xs font-medium">
+    <span id="toastDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+    <span id="toastMessage">설정이 저장되었습니다.</span>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. PLANT METADATA & REFERENCE VALUES
+    //    측정값은 GitHub Actions가 공공데이터포털 API에서 수집한 data/radiation.json만 사용한다.
+    // =========================================================================
+    const DATA_URL = 'data/radiation.json';
+    const CLIENT_REFRESH_SEC = 300;              // 브라우저가 JSON을 다시 읽는 주기(수집 주기는 워크플로에서 결정)
+    const STALE_AFTER_MS = 2 * 60 * 60 * 1000;   // 마지막 수집 후 2시간이 지나면 '수신 지연' 표시
+    const NATURAL_MIN = 0.05;
+    const NATURAL_MAX = 0.30;                    // 국내 평시 자연방사선 범위 상한(μSv/h)
+    const PLANT_CODES = ['WS', 'KR', 'SU', 'YK', 'UJ'];
+
+    const PLANT_INFO = {
+      WS: {
+        code: 'WS',
+        name: '월성원자력본부',
+        shortName: '월성본부',
+        region: '경상북도 경주시 양남면·문무대왕면·감포읍 일원',
+        desc: '월성원자력본부 주변 환경방사선 감시초소에서 측정된 공간감마선량률 현황입니다.'
+      },
+      KR: {
+        code: 'KR',
+        name: '고리원자력본부',
+        shortName: '고리본부',
+        region: '부산광역시 기장군 장안읍·일광읍 일원',
+        desc: '고리원자력본부 주변 환경방사선 감시초소에서 측정된 공간감마선량률 현황입니다.'
+      },
+      SU: {
+        code: 'SU',
+        name: '새울원자력본부',
+        shortName: '새울본부',
+        region: '울산광역시 울주군 서생면·온양읍 일원',
+        desc: '새울원자력본부 주변 환경방사선 감시초소에서 측정된 공간감마선량률 현황입니다.'
+      },
+      YK: {
+        code: 'YK',
+        name: '한빛원자력본부',
+        shortName: '한빛본부',
+        region: '전라남도 영광군 홍농읍·백수읍·법성면 일원',
+        desc: '한빛원자력본부 주변 환경방사선 감시초소에서 측정된 공간감마선량률 현황입니다.'
+      },
+      UJ: {
+        code: 'UJ',
+        name: '한울원자력본부',
+        shortName: '한울본부',
+        region: '경상북도 울진군 북면·죽변면·울진읍 일원',
+        desc: '한울원자력본부 주변 환경방사선 감시초소에서 측정된 공간감마선량률 현황입니다.'
+      }
+    };
+
+    // Everyday comparison reference items (for resident communication)
+    const EVERYDAY_BENCHMARKS = [
+      {
+        id: 'banana',
+        title: '바나나 1개 섭취 (자연 칼륨-40)',
+        doseUsv: 0.1,
+        unitLabel: '1회 섭취 시 약 0.1 μSv',
+        category: '식품 자연방사선',
+        badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
+        barColor: 'bg-amber-500',
+        desc: '바나나에 풍부한 칼륨(K-40)에서 나오는 극미량의 자연방사선으로, 체내에 축적되지 않고 자연 배출됩니다.'
+      },
+      {
+        id: 'dental',
+        title: '치과 구강 X-ray 촬영 (1회)',
+        doseUsv: 5.0,
+        unitLabel: '1회 촬영 시 약 5.0 μSv',
+        category: '일상 의료검진',
+        badgeColor: 'bg-sky-50 text-sky-700 border-sky-200',
+        barColor: 'bg-sky-500',
+        desc: '치과 진료 시 치아 상태를 확인하기 위해 촬영하는 간단한 구강 엑스레이 1회 선량입니다.'
+      },
+      {
+        id: 'chestXray',
+        title: '병원 흉부 X-ray 촬영 (1회)',
+        doseUsv: 100.0,
+        unitLabel: '1회 촬영 시 약 100 μSv (0.1 mSv)',
+        category: '건강검진 기준',
+        badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+        barColor: 'bg-indigo-500',
+        desc: '일반 건강검진에서 가장 흔히 촬영하는 흉부 방사선 검사 1회 시 받는 선량입니다.'
+      },
+      {
+        id: 'flight',
+        title: '서울 ↔ 뉴욕 항공여행 (왕복)',
+        doseUsv: 160.0,
+        unitLabel: '왕복 비행 시 약 160 μSv (시간당 ~6 μSv/h)',
+        category: '우주방사선',
+        badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
+        barColor: 'bg-purple-500',
+        desc: '고도 10km 상공 비행 중 우주방사선 영향으로 원전 주변 평시 선량률의 약 70~80배를 시간당 받게 됩니다.'
+      },
+      {
+        id: 'legalLimit',
+        title: '일반인 연간 법정 선량한도',
+        doseUsv: 1000.0,
+        unitLabel: '연간 1,000 μSv (1.0 mSv / 자연·의료 제외)',
+        category: '원자력안전법 기준',
+        badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        barColor: 'bg-emerald-600',
+        desc: '원자력안전법이 정한 일반 국민의 연간 인공방사선 허용 한도입니다. 실제 원전 주변 영향은 이 기준의 1~3% 미만입니다.'
+      },
+      {
+        id: 'naturalKr',
+        title: '대한민국 국민 연간 자연방사선량',
+        doseUsv: 3000.0,
+        unitLabel: '연간 약 3,000 μSv (3.0 mSv)',
+        category: '자연환경 평균',
+        badgeColor: 'bg-teal-50 text-teal-700 border-teal-200',
+        barColor: 'bg-teal-600',
+        desc: '토양·우주·공기(라돈)·음식물 등을 통해 대한민국 국민 누구나 매년 자연적으로 받는 평균 방사선량입니다.'
+      }
+    ];
+
+    // =========================================================================
+    // 2. APPLICATION STATE
+    // =========================================================================
+    const state = {
+      selectedPlant: 'WS',          // Default: 월성원자력본부 (WS)
+      viewMode: 'integrated',       // 'integrated' | 'dashboard' | 'communication'
+      searchQuery: '',
+      sortBy: 'default',
+      simHours: 1,                  // 1, 24, 720, 8760
+      selectedStationForComm: null, // null means use selected plant average
+      mobileStationsExpanded: false,// mobile collapse/expand toggle state for station cards
+      selectedBenchmarkId: null,    // mobile selected benchmark item id for everyday comparison
+      plantData: {},                // { WS: [...stations], KR: [...], ... }
+      plantStatus: {},              // { WS: { ok, stale, lastSuccessAt, error }, ... }
+      history: [],                  // [{ t, WS, KR, ... }] 최근 24시간 본부 평균
+      fetchedAt: null,
+      loadState: 'loading'          // 'loading' | 'ok' | 'error'
+    };
+
+    let stationChartInstance = null;
+    let trendChartInstance = null;
+
+    // =========================================================================
+    // 3. FORMAT & STATUS HELPERS
+    // =========================================================================
+    function formatKst(iso, withDate = true) {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      if (isNaN(d)) return '-';
+      const opts = withDate
+        ? { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }
+        : { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false };
+      return d.toLocaleString('ko-KR', opts);
+    }
+
+    function isWithinNatural(value) {
+      return value <= NATURAL_MAX;
+    }
+
+    function statusChip(value, compact = false) {
+      return isWithinNatural(value)
+        ? `<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>정상</span>`
+        : `<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>${compact ? '범위 초과' : '평시 범위 초과'}</span>`;
+    }
+
+    function isPlantStale(code) {
+      const st = state.plantStatus[code];
+      if (!st || !st.lastSuccessAt) return true;
+      return !st.ok || (Date.now() - new Date(st.lastSuccessAt)) > STALE_AFTER_MS;
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function showToast(message, isWarning = false) {
+      const toast = document.getElementById('toastNotification');
+      const dot = document.getElementById('toastDot');
+      const msg = document.getElementById('toastMessage');
+      if (!toast || !msg || !dot) return;
+      msg.textContent = message;
+      dot.className = isWarning
+        ? 'w-2 h-2 rounded-full bg-amber-400'
+        : 'w-2 h-2 rounded-full bg-emerald-400';
+      toast.classList.remove('hidden');
+      toast.classList.add('flex');
+      clearTimeout(toast._hideTimer);
+      toast._hideTimer = setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('flex');
+      }, 3600);
+    }
+
+    // =========================================================================
+    // 4. DATA LOADING (collected JSON only — no simulation)
+    // =========================================================================
+    async function loadRadiationData(showNotification = false) {
+      try {
+        const res = await fetch(`${DATA_URL}?_=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+
+        PLANT_CODES.forEach(code => {
+          const p = (json.plants || {})[code] || {};
+          const info = PLANT_INFO[code];
+          state.plantStatus[code] = {
+            ok: Boolean(p.ok),
+            stale: Boolean(p.stale),
+            lastSuccessAt: p.lastSuccessAt || null,
+            error: p.error || null
+          };
+          state.plantData[code] = (p.stations || [])
+            .filter(s => typeof s.value === 'number' && isFinite(s.value))
+            .map((s, idx) => ({
+              key: `${code}:${idx}:${s.name || s.expl}`,
+              plantCode: code,
+              plantName: info.shortName,
+              name: s.name || `${code}-${String(idx + 1).padStart(2, '0')}`,
+              expl: s.expl || s.name || '측정소',
+              subRegion: info.region,
+              time: s.time || '',
+              value: s.value
+            }));
+        });
+        state.history = Array.isArray(json.history) ? json.history : [];
+        state.fetchedAt = json.fetchedAt || null;
+        state.loadState = 'ok';
+        if (showNotification) showToast('최신 수집 데이터를 다시 불러왔습니다.');
+      } catch (err) {
+        // 이전에 불러온 값이 있으면 유지하고, 없으면 '데이터 없음' 상태로 표시한다.
+        if (state.loadState !== 'ok') state.loadState = 'error';
+        if (showNotification) showToast('측정 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.', true);
+      }
+
+      updateHeaderStatusBadge();
+      renderDataStatusBanner();
+      renderAllSections();
+    }
+
+    function updateHeaderStatusBadge() {
+      const badge = document.getElementById('apiModeBadge');
+      const text = document.getElementById('apiModeText');
+      const timeEl = document.getElementById('lastUpdatedTime');
+      if (timeEl) timeEl.textContent = formatKst(state.fetchedAt);
+      if (!badge || !text) return;
+
+      const staleCount = PLANT_CODES.filter(isPlantStale).length;
+      const base = 'text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1.5 border ';
+      if (state.loadState === 'loading') {
+        badge.className = base + 'bg-slate-500/20 text-slate-300 border-slate-400/30';
+        text.textContent = '데이터 불러오는 중';
+      } else if (state.loadState === 'error' || staleCount === PLANT_CODES.length) {
+        badge.className = base + 'bg-rose-500/20 text-rose-300 border-rose-400/30';
+        text.textContent = '측정 데이터 수신 지연';
+      } else if (staleCount > 0) {
+        badge.className = base + 'bg-amber-500/20 text-amber-300 border-amber-400/30';
+        text.textContent = `일부 본부 수신 지연 (${staleCount}곳)`;
+      } else {
+        badge.className = base + 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30';
+        text.textContent = '공공데이터포털 측정 데이터';
+      }
+    }
+
+    function renderDataStatusBanner() {
+      const el = document.getElementById('dataStatusBanner');
+      if (!el) return;
+      let msg = '';
+      if (state.loadState === 'error') {
+        msg = '현재 측정 데이터를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.';
+      } else if (state.loadState === 'ok') {
+        const delayed = PLANT_CODES.filter(isPlantStale).map(code => {
+          const last = state.plantStatus[code]?.lastSuccessAt;
+          return `${PLANT_INFO[code].shortName}(${last ? '마지막 수집 ' + formatKst(last) : '수집 이력 없음'})`;
+        });
+        if (delayed.length) msg = `최신 측정 데이터 수신이 지연되고 있습니다: ${delayed.join(', ')}. 표시된 값은 마지막으로 수집된 값입니다.`;
+      }
+      el.textContent = msg;
+      el.classList.toggle('hidden', !msg);
+    }
+
+    // =========================================================================
+    // 5. AGGREGATION & CURRENT SELECTION HELPERS
+    // =========================================================================
+    function getActiveStations() {
+      if (state.selectedPlant === 'ALL') {
+        return PLANT_CODES.flatMap(code => state.plantData[code] || []);
+      }
+      return state.plantData[state.selectedPlant] || [];
+    }
+
+    function computeStats(stations) {
+      if (!stations || stations.length === 0) return null;
+      let sum = 0;
+      let minObj = stations[0];
+      let maxObj = stations[0];
+      let overCount = 0;
+      stations.forEach(s => {
+        sum += s.value;
+        if (s.value < minObj.value) minObj = s;
+        if (s.value > maxObj.value) maxObj = s;
+        if (!isWithinNatural(s.value)) overCount++;
+      });
+      return {
+        avg: +(sum / stations.length).toFixed(3),
+        min: minObj.value,
+        max: maxObj.value,
+        minStation: minObj.expl.split(' ')[0],
+        maxStation: maxObj.expl.split(' ')[0],
+        count: stations.length,
+        overCount
+      };
+    }
+
+    // =========================================================================
+    // 6. UI RENDERING FUNCTIONS
+    // =========================================================================
+    function renderAllSections() {
+      renderPlantTabs();
+      renderHeroAndKpis();
+      renderFivePlantSummaryCards();
+      renderCharts();
+      renderStationCardsGrid();
+      renderResidentCommunicationSection();
+    }
+
+    function renderPlantTabs() {
+      const buttons = document.querySelectorAll('.plant-tab');
+      buttons.forEach(btn => {
+        const code = btn.getAttribute('data-plant');
+        if (code === state.selectedPlant) {
+          btn.className = 'plant-tab px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 bg-sky-500 text-white shadow-sm';
+        } else {
+          btn.className = 'plant-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 bg-slate-700/70 text-slate-300 hover:bg-slate-700 hover:text-white';
+        }
+      });
+      const mobileSelect = document.getElementById('mobilePlantSelect');
+      if (mobileSelect && mobileSelect.value !== state.selectedPlant) {
+        mobileSelect.value = state.selectedPlant;
+      }
+    }
+
+    function renderHeroAndKpis() {
+      const stations = getActiveStations();
+      const stats = computeStats(stations);
+
+      const isAll = state.selectedPlant === 'ALL';
+      const plantMeta = isAll
+        ? {
+            name: '전국 5개 원자력본부 통합',
+            shortName: '5개 본부 전체',
+            codeBadge: '월성 · 고리 · 새울 · 한빛 · 한울',
+            desc: '월성·고리·새울·한빛·한울 5개 원자력본부 주변 환경방사선 감시초소의 측정 현황입니다.'
+          }
+        : {
+            name: PLANT_INFO[state.selectedPlant].name,
+            shortName: PLANT_INFO[state.selectedPlant].shortName,
+            codeBadge: PLANT_INFO[state.selectedPlant].region,
+            desc: PLANT_INFO[state.selectedPlant].desc
+          };
+
+      const heroTitleEl = document.getElementById('heroPlantTitle');
+      if (heroTitleEl) {
+        heroTitleEl.innerHTML = `<span class="sm:hidden">원전 주변 실시간 방사선량 (${plantMeta.shortName})</span><span class="hidden sm:inline">${plantMeta.name} 주변 실시간 방사선량</span>`;
+      }
+      document.getElementById('heroPlantCodeBadge').textContent = plantMeta.codeBadge;
+      document.getElementById('heroAvgLabel').textContent = `${plantMeta.shortName} 평균 방사선량률`;
+
+      const heroBadge = document.getElementById('heroSafetyBadge');
+      const heroBadgeWrap = document.getElementById('heroSafetyBadgeWrap');
+      const heroStatus = document.getElementById('heroStatusBadge');
+      const okWrap = 'inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-semibold';
+      const warnWrap = 'inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-200 text-xs font-semibold';
+
+      if (!stats) {
+        heroBadge.textContent = state.loadState === 'loading' ? '측정 데이터를 불러오는 중입니다' : '표시할 측정 데이터가 없습니다';
+        heroBadgeWrap.className = warnWrap;
+        heroStatus.textContent = '-';
+        heroStatus.className = 'px-2 py-0.5 rounded bg-slate-500/20 text-slate-300 font-semibold border border-slate-500/30';
+        document.getElementById('heroPlantDesc').textContent = plantMeta.desc;
+        ['heroAvgValue', 'kpiAvgRate', 'kpiMinMaxRate', 'kpiXrayRatio', 'kpiAnnualEquiv'].forEach(id => {
+          document.getElementById(id).textContent = '-';
+        });
+        document.getElementById('kpiStationCountText').textContent = '측정 데이터 없음';
+        document.getElementById('kpiMinMaxLocation').textContent = '-';
+        document.getElementById('heroSpectrumMarker').style.left = '0%';
+        return;
+      }
+
+      if (stats.overCount === 0) {
+        heroBadge.textContent = '모든 측정소 평시 범위 (국내 자연방사선 수준)';
+        heroBadgeWrap.className = okWrap;
+        heroStatus.textContent = '정상';
+        heroStatus.className = 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30';
+        document.getElementById('heroPlantDesc').textContent =
+          `${plantMeta.desc} 측정값은 대한민국 자연방사선 변동 범위(${NATURAL_MIN.toFixed(2)} ~ ${NATURAL_MAX.toFixed(2)} μSv/h) 안에 있습니다.`;
+      } else {
+        heroBadge.textContent = `평시 범위(${NATURAL_MAX.toFixed(2)} μSv/h)를 넘는 측정소 ${stats.overCount}곳`;
+        heroBadgeWrap.className = warnWrap;
+        heroStatus.textContent = '범위 초과 있음';
+        heroStatus.className = 'px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 font-semibold border border-amber-500/30';
+        document.getElementById('heroPlantDesc').textContent =
+          `${plantMeta.desc} 일부 측정소 값이 평시 자연방사선 범위 상한(${NATURAL_MAX.toFixed(2)} μSv/h)을 넘었습니다.`;
+      }
+
+      document.getElementById('heroAvgValue').textContent = stats.avg.toFixed(3);
+
+      // Spectrum marker position between 0.05 and 0.30
+      const ratio = Math.min(96, Math.max(4, ((stats.avg - 0.04) / (NATURAL_MAX - 0.04)) * 100));
+      document.getElementById('heroSpectrumMarker').style.left = `${ratio.toFixed(1)}%`;
+
+      // KPIs
+      document.getElementById('kpiAvgRate').textContent = stats.avg.toFixed(3);
+      document.getElementById('kpiStationCountText').textContent = `측정소 ${stats.count}개소 산술평균`;
+      document.getElementById('kpiMinMaxRate').textContent = `${stats.min.toFixed(3)} ~ ${stats.max.toFixed(3)}`;
+      document.getElementById('kpiMinMaxLocation').textContent = `최저: ${stats.minStation} / 최고: ${stats.maxStation}`;
+
+      const xrayDivisor = Math.round(100 / Math.max(0.001, stats.avg));
+      document.getElementById('kpiXrayRatio').textContent = `1 / ${xrayDivisor.toLocaleString()}`;
+
+      const annualMsv = ((stats.avg * 24 * 365) / 1000).toFixed(2);
+      document.getElementById('kpiAnnualEquiv').textContent = annualMsv;
+    }
+
+    function renderFivePlantSummaryCards() {
+      const container = document.getElementById('plantSummaryCardsGrid');
+      if (!container) return;
+
+      container.innerHTML = PLANT_CODES.map(code => {
+        const info = PLANT_INFO[code];
+        const stats = computeStats(state.plantData[code] || []);
+        const isSelected = state.selectedPlant === code;
+        const borderClass = isSelected
+          ? 'border-2 border-sky-500 bg-sky-50/50 shadow-sm'
+          : 'border border-slate-200 bg-slate-50/60 hover:bg-slate-100/80';
+        const stale = isPlantStale(code);
+
+        const statusHtml = !stats
+          ? '<span class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">데이터 없음</span>'
+          : stats.overCount === 0
+            ? `<span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">정상 (${stats.count}개소)</span>`
+            : `<span class="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-300">범위 초과 ${stats.overCount}곳</span>`;
+
+        return `
+          <button type="button" data-select-plant="${code}" class="plant-summary-card text-left rounded-xl p-3.5 transition flex flex-col justify-between ${borderClass}">
+            <div class="flex items-center justify-between w-full">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-extrabold text-slate-900">${info.name}</span>
+                ${code === 'WS' ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-700">기본</span>' : ''}
+              </div>
+              <span class="text-[11px] font-mono text-slate-400">${code}</span>
+            </div>
+            <div class="mt-2 flex items-baseline justify-between">
+              <div>
+                <span class="text-xl font-extrabold ${isSelected ? 'text-sky-600' : 'text-slate-900'}">${stats ? stats.avg.toFixed(3) : '-'}</span>
+                <span class="text-[11px] font-medium text-slate-500">μSv/h</span>
+              </div>
+              ${statusHtml}
+            </div>
+            <div class="mt-1.5 text-[11px] text-slate-500 truncate">
+              ${stats ? `범위: ${stats.min.toFixed(3)} ~ ${stats.max.toFixed(3)} μSv/h` : '측정값 없음'}
+            </div>
+            ${stale && stats ? '<div class="mt-1 text-[10px] font-semibold text-amber-700">수신 지연 · 마지막 수집값</div>' : ''}
+          </button>
+        `;
+      }).join('');
+
+      container.querySelectorAll('.plant-summary-card').forEach(card => {
+        card.addEventListener('click', () => {
+          state.selectedPlant = card.getAttribute('data-select-plant');
+          state.selectedStationForComm = null;
+          renderAllSections();
+        });
+      });
+    }
+
+    function getTrendSeries() {
+      const codes = state.selectedPlant === 'ALL' ? PLANT_CODES : [state.selectedPlant];
+      return state.history
+        .map(p => {
+          const vals = codes.map(c => p[c]).filter(v => typeof v === 'number' && isFinite(v));
+          if (!vals.length) return null;
+          return { t: p.t, v: +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(3) };
+        })
+        .filter(Boolean)
+        .sort((a, b) => new Date(a.t) - new Date(b.t));
+    }
+
+    function renderCharts() {
+      const stations = getActiveStations();
+      const isAll = state.selectedPlant === 'ALL';
+
+      // 1. Bar Chart
+      const chartTitleEl = document.getElementById('stationChartTitle');
+      let barLabels = [];
+      let barValues = [];
+      let barRawObjects = [];
+
+      if (isAll) {
+        chartTitleEl.textContent = '5개 원자력본부 주요 측정소 방사선량률 비교 (μSv/h)';
+        // Show each plant's first 3 stations so all 5 plants are clearly visible
+        PLANT_CODES.forEach(code => {
+          (state.plantData[code] || []).slice(0, 3).forEach(item => {
+            barLabels.push(`[${PLANT_INFO[code].shortName.replace('본부', '')}] ${item.expl.split(' ')[0]}`);
+            barValues.push(item.value);
+            barRawObjects.push(item);
+          });
+        });
+      } else {
+        chartTitleEl.textContent = `${PLANT_INFO[state.selectedPlant].name} 측정소별 방사선량률 (μSv/h)`;
+        stations.forEach(item => {
+          barLabels.push(item.expl.split(' ')[0]);
+          barValues.push(item.value);
+          barRawObjects.push(item);
+        });
+      }
+
+      const barCtx = document.getElementById('stationBarChart').getContext('2d');
+      if (stationChartInstance) {
+        stationChartInstance.destroy();
+      }
+
+      const pickedKey = state.selectedStationForComm && state.selectedStationForComm.key;
+      stationChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: barLabels,
+          datasets: [
+            {
+              label: '공간감마선량률 (μSv/h)',
+              data: barValues,
+              backgroundColor: barRawObjects.map(it =>
+                pickedKey === it.key
+                  ? 'rgba(16, 185, 129, 0.88)'
+                  : !isWithinNatural(it.value)
+                    ? 'rgba(245, 158, 11, 0.85)'
+                    : it.plantCode === 'WS'
+                      ? 'rgba(14, 165, 233, 0.82)'
+                      : 'rgba(59, 130, 246, 0.78)'
+              ),
+              borderColor: barRawObjects.map(it =>
+                pickedKey === it.key ? '#059669' : '#0284c7'
+              ),
+              borderWidth: 1.5,
+              borderRadius: 6,
+              maxBarThickness: 36
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (_, elements) => {
+            if (elements && elements.length > 0) {
+              const picked = barRawObjects[elements[0].index];
+              if (picked) {
+                state.selectedStationForComm = picked;
+                renderResidentCommunicationSection();
+                renderCharts();
+                renderStationCardsGrid();
+                showToast(`'${picked.expl}' 측정소(${picked.value.toFixed(3)} μSv/h)가 일상 방사선 비교 기준으로 선택되었습니다.`);
+              }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` 측정값: ${ctx.parsed.y.toFixed(3)} μSv/h (${isWithinNatural(ctx.parsed.y) ? '자연방사선 범위 내' : '평시 범위 초과'})`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              suggestedMax: 0.16,
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 11 },
+                callback: v => `${v.toFixed(2)}`
+              }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11 } }
+            }
+          }
+        }
+      });
+
+      // 2. 24-Hour Time Series Line Chart (collected history only)
+      const trendCtx = document.getElementById('hourlyTrendChart').getContext('2d');
+      if (trendChartInstance) {
+        trendChartInstance.destroy();
+      }
+
+      const series = getTrendSeries();
+      const rangeBadge = document.getElementById('trendRangeBadge');
+      if (rangeBadge) {
+        if (series.length < 2) {
+          rangeBadge.textContent = `추이 데이터 수집 중 (${series.length}건)`;
+        } else {
+          const vals = series.map(p => p.v);
+          rangeBadge.textContent = `범위 ${Math.min(...vals).toFixed(3)} ~ ${Math.max(...vals).toFixed(3)} μSv/h (${series.length}건)`;
+        }
+      }
+
+      trendChartInstance = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+          labels: series.map(p => formatKst(p.t, false)),
+          datasets: [
+            {
+              label: '선택 본부 평균 선량률 (μSv/h)',
+              data: series.map(p => p.v),
+              borderColor: '#0284c7',
+              backgroundColor: 'rgba(14, 165, 233, 0.12)',
+              fill: true,
+              tension: 0.35,
+              pointRadius: series.length > 30 ? 0 : 3,
+              pointBackgroundColor: '#0284c7'
+            },
+            {
+              label: '국내 평시 자연방사선 평균 (약 0.12 μSv/h)',
+              data: series.map(() => 0.12),
+              borderColor: '#10b981',
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12, font: { size: 11 } }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              suggestedMax: 0.20,
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 11 },
+                callback: v => `${v.toFixed(2)}`
+              }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11 }, maxTicksLimit: 8 }
+            }
+          }
+        }
+      });
+    }
+
+    function renderStationCardsGrid() {
+      const container = document.getElementById('stationCardsContainer');
+      if (!container) return;
+
+      let stations = getActiveStations().slice();
+
+      // Search filter
+      const q = state.searchQuery.trim().toLowerCase();
+      if (q) {
+        stations = stations.filter(st =>
+          st.expl.toLowerCase().includes(q) ||
+          st.name.toLowerCase().includes(q) ||
+          st.subRegion.toLowerCase().includes(q) ||
+          st.plantName.toLowerCase().includes(q)
+        );
+      }
+
+      // Sort
+      if (state.sortBy === 'desc') {
+        stations.sort((a, b) => b.value - a.value);
+      } else if (state.sortBy === 'asc') {
+        stations.sort((a, b) => a.value - b.value);
+      } else if (state.sortBy === 'name') {
+        stations.sort((a, b) => a.expl.localeCompare(b.expl, 'ko'));
+      }
+
+      if (stations.length === 0) {
+        const emptyMsg = getActiveStations().length === 0
+          ? '표시할 측정 데이터가 없습니다.'
+          : '검색 조건에 일치하는 측정소가 없습니다. 검색어를 지우거나 다른 본부를 선택해 보세요.';
+        container.innerHTML = `
+          <div class="col-span-full py-10 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+            ${emptyMsg}
+          </div>
+        `;
+        updateMobileStationToggleUI(0);
+        return;
+      }
+
+      container.innerHTML = stations.map(st => {
+        const isPicked = state.selectedStationForComm && state.selectedStationForComm.key === st.key;
+        const cardStyle = isPicked
+          ? 'border-2 border-emerald-500 bg-emerald-50/40 shadow-sm'
+          : 'border border-slate-200 bg-white hover:border-sky-400 hover:shadow-sm';
+
+        // Bar percentage relative to 0.30 μSv/h natural ceiling
+        const pct = Math.min(100, Math.round((st.value / NATURAL_MAX) * 100));
+        const within = isWithinNatural(st.value);
+
+        return `
+          <button type="button" data-station-key="${escapeHtml(st.key)}" class="station-item-card text-left rounded-xl p-4 transition flex flex-col justify-between ${cardStyle}">
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono">${escapeHtml(st.name)}</span>
+                ${statusChip(st.value, true)}
+              </div>
+              <h4 class="text-sm font-bold text-slate-900 mt-2">${escapeHtml(st.expl)}</h4>
+              <p class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(st.plantName)} · ${escapeHtml(st.subRegion)}</p>
+            </div>
+
+            <div class="mt-3 pt-2.5 border-t border-slate-100">
+              <div class="flex items-baseline justify-between">
+                <div>
+                  <span class="text-2xl font-extrabold text-slate-900">${st.value.toFixed(3)}</span>
+                  <span class="text-xs font-semibold text-slate-500">μSv/h</span>
+                </div>
+                <span class="text-[10px] text-slate-400">${escapeHtml(st.time)}</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-2">
+                <div class="h-full ${within ? 'bg-sky-500' : 'bg-amber-500'} rounded-full" style="width: ${pct}%;"></div>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+                <span>${within ? '자연방사선 범위 내' : '평시 범위 초과'}</span>
+                <span class="${isPicked ? 'text-emerald-700 font-bold' : 'text-sky-600'}">${isPicked ? '✓ 비교 기준 선택됨' : '클릭하여 비교하기'}</span>
+              </div>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      container.querySelectorAll('.station-item-card').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-station-key');
+          const found = getActiveStations().find(s => s.key === key);
+          if (found) {
+            state.selectedStationForComm = found;
+            renderResidentCommunicationSection();
+            renderStationCardsGrid();
+            renderCharts();
+            showToast(`'${found.expl}' (${found.value.toFixed(3)} μSv/h) 측정값을 기준으로 일상 비교 화면을 업데이트했습니다.`);
+          }
+        });
+      });
+
+      updateMobileStationToggleUI(stations.length);
+    }
+
+    function updateMobileStationToggleUI(count) {
+      const container = document.getElementById('stationCardsContainer');
+      const toggleText = document.getElementById('mobileStationToggleText');
+      const toggleIcon = document.getElementById('mobileStationToggleIcon');
+      if (!container || !toggleText || !toggleIcon) return;
+
+      if (state.mobileStationsExpanded) {
+        container.classList.remove('hidden');
+        container.classList.add('grid');
+        toggleText.textContent = `측정소 카드 목록 접기 (${count}개소)`;
+        toggleIcon.classList.add('rotate-180');
+      } else {
+        container.classList.add('hidden');
+        container.classList.remove('grid');
+        toggleText.textContent = `측정소 카드 목록 펼치기 (${count}개소)`;
+        toggleIcon.classList.remove('rotate-180');
+      }
+    }
+
+    function renderResidentCommunicationSection() {
+      const stats = computeStats(getActiveStations());
+
+      const activeTarget = state.selectedStationForComm
+        ? {
+            label: `${state.selectedStationForComm.plantName} ${state.selectedStationForComm.expl}`,
+            rate: state.selectedStationForComm.value
+          }
+        : {
+            label: state.selectedPlant === 'ALL'
+              ? '전국 5개 원자력본부 평균'
+              : `${PLANT_INFO[state.selectedPlant].name} 평균`,
+            rate: stats ? stats.avg : null
+          };
+      const hasRate = typeof activeTarget.rate === 'number';
+      const rateText = hasRate ? `${activeTarget.rate.toFixed(3)} μSv/h` : '-';
+
+      document.getElementById('commSelectedTargetName').textContent = activeTarget.label;
+      document.getElementById('commSelectedRateText').textContent = rateText;
+      document.getElementById('simSelectedStationBadge').textContent = activeTarget.label;
+      document.getElementById('compSectionSubTitle').textContent = `${activeTarget.label} (${rateText})`;
+
+      // Duration simulator calculation
+      const durationNames = {
+        1: '1시간 누적 공간선량',
+        24: '하루(24시간) 누적 공간선량',
+        720: '1개월(30일) 누적 공간선량',
+        8760: '1년(365일) 누적 공간선량'
+      };
+      document.getElementById('simCumulativeLabel').textContent = durationNames[state.simHours] || `${state.simHours}시간 누적 공간선량`;
+      if (hasRate) {
+        const cumulativeUsv = +(activeTarget.rate * state.simHours).toFixed(3);
+        document.getElementById('simCumulativeValue').textContent = cumulativeUsv.toLocaleString();
+        document.getElementById('simCumulativeMsv').textContent = `(= ${(cumulativeUsv / 1000).toFixed(5)} mSv)`;
+        document.getElementById('simBananaEquiv').textContent = `바나나 약 ${Number((cumulativeUsv / 0.1).toFixed(1)).toLocaleString()}개 분량`;
+      } else {
+        document.getElementById('simCumulativeValue').textContent = '-';
+        document.getElementById('simCumulativeMsv').textContent = '';
+        document.getElementById('simBananaEquiv').textContent = '-';
+      }
+
+      // Update duration button active styles
+      document.querySelectorAll('.dur-btn').forEach(btn => {
+        const hrs = parseInt(btn.getAttribute('data-hours'), 10);
+        if (hrs === state.simHours) {
+          btn.className = 'dur-btn py-1.5 rounded-lg text-xs font-bold bg-sky-500 text-white shadow';
+        } else {
+          btn.className = 'dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20';
+        }
+      });
+
+      // Helper to build a benchmark detail card HTML
+      function buildBenchmarkCardHtml(bm) {
+        const multiple = hasRate ? (bm.doseUsv / Math.max(0.001, activeTarget.rate)) : null;
+        const multipleText = multiple == null
+          ? '-'
+          : `약 ${multiple >= 10 ? Math.round(multiple).toLocaleString() : multiple.toFixed(1)}배`;
+
+        return `
+          <div class="rounded-xl border border-slate-200 p-4 bg-slate-50/50 hover:bg-white hover:shadow-sm transition flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${bm.badgeColor}">
+                  ${bm.category}
+                </span>
+                <span class="text-xs font-extrabold text-slate-900">${bm.doseUsv.toLocaleString()} μSv</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-900">${bm.title}</h4>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">${bm.desc}</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-200/80">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-500 font-medium">현재 1시간 선량 대비</span>
+                <span class="font-extrabold text-sky-700">${multipleText}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Desktop: Everyday comparison cards (all 6 cards)
+      const grid = document.getElementById('everydayComparisonGrid');
+      if (grid) {
+        grid.innerHTML = EVERYDAY_BENCHMARKS.map(bm => buildBenchmarkCardHtml(bm)).join('');
+      }
+
+      // Mobile: Title-only selector buttons + selected item's detail card
+      const mobileSelectGrid = document.getElementById('mobileBenchmarkSelectGrid');
+      const mobileDetailContainer = document.getElementById('mobileBenchmarkDetailContainer');
+      if (mobileSelectGrid && mobileDetailContainer) {
+        mobileSelectGrid.innerHTML = EVERYDAY_BENCHMARKS.map(bm => {
+          const isSelected = state.selectedBenchmarkId === bm.id;
+          const btnStyle = isSelected
+            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+            : 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100';
+          return `
+            <button type="button" data-benchmark-id="${bm.id}" class="mobile-benchmark-btn text-left px-3 py-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-between gap-1.5 ${btnStyle}">
+              <span class="truncate">${bm.title}</span>
+              <svg class="w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-white rotate-180' : 'text-slate-400'} transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          `;
+        }).join('');
+
+        const pickedBm = EVERYDAY_BENCHMARKS.find(bm => bm.id === state.selectedBenchmarkId);
+        mobileDetailContainer.innerHTML = pickedBm ? buildBenchmarkCardHtml(pickedBm) : '';
+
+        mobileSelectGrid.querySelectorAll('.mobile-benchmark-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const bmId = btn.getAttribute('data-benchmark-id');
+            state.selectedBenchmarkId = state.selectedBenchmarkId === bmId ? null : bmId;
+            renderResidentCommunicationSection();
+          });
+        });
+      }
+
+      // Update one-line summary text
+      const briefingEl = document.getElementById('paBriefingSummaryText');
+      if (briefingEl) {
+        const label = escapeHtml(activeTarget.label);
+        if (!hasRate) {
+          briefingEl.textContent = '측정 데이터를 불러오면 요약이 표시됩니다.';
+        } else if (isWithinNatural(activeTarget.rate)) {
+          const xrayRatio = Math.round(100 / Math.max(0.001, activeTarget.rate)).toLocaleString();
+          briefingEl.innerHTML = `"현재 <strong>${label}</strong>의 환경방사선량률은 <strong>${activeTarget.rate.toFixed(3)} μSv/h</strong>로, 우리나라 평시 자연방사선 범위(0.05~0.30 μSv/h) 이내의 안전한 수준입니다. 이는 병원에서 촬영하는 <strong>흉부 X-ray 1회(100 μSv)의 약 ${xrayRatio}분의 1</strong>에 불과하며, 바나나 1개를 섭취할 때 받는 자연방사선량(0.1 μSv)보다도 낮은 수준입니다."`;
+        } else {
+          briefingEl.innerHTML = `"현재 <strong>${label}</strong>의 환경방사선량률은 <strong>${activeTarget.rate.toFixed(3)} μSv/h</strong>로, 우리나라 평시 자연방사선 범위(0.05~0.30 μSv/h)를 넘는 값입니다."`;
+        }
+      }
+    }
+
+    // =========================================================================
+    // 7. EVENT LISTENERS
+    // =========================================================================
+    function setupEventListeners() {
+      // 1. Plant filter buttons (Desktop) & Dropdown (Mobile)
+      document.querySelectorAll('.plant-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.selectedPlant = btn.getAttribute('data-plant');
+          state.selectedStationForComm = null;
+          renderAllSections();
+        });
+      });
+
+      const mobilePlantSelect = document.getElementById('mobilePlantSelect');
+      if (mobilePlantSelect) {
+        mobilePlantSelect.addEventListener('change', e => {
+          state.selectedPlant = e.target.value;
+          state.selectedStationForComm = null;
+          renderAllSections();
+        });
+      }
+
+      // 2. View mode switcher (Integrated / Monitoring Only / Communication Only)
+      document.querySelectorAll('.view-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.viewMode = btn.getAttribute('data-view');
+          document.querySelectorAll('.view-tab').forEach(b => {
+            if (b.getAttribute('data-view') === state.viewMode) {
+              b.className = 'view-tab px-2.5 py-1 rounded-md text-xs font-semibold bg-sky-600 text-white transition';
+            } else {
+              b.className = 'view-tab px-2.5 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition';
+            }
+          });
+
+          const secMon = document.getElementById('sectionMonitoring');
+          const secComm = document.getElementById('sectionCommunication');
+          secMon.classList.toggle('hidden', state.viewMode === 'communication');
+          secComm.classList.toggle('hidden', state.viewMode === 'dashboard');
+          renderCharts();
+        });
+      });
+
+      // 3. Manual refresh button (re-reads the collected JSON)
+      document.getElementById('btnManualRefresh').addEventListener('click', () => {
+        loadRadiationData(true);
+      });
+
+      // 4. Station search, sort & mobile collapse/expand toggle
+      document.getElementById('stationSearchInput').addEventListener('input', e => {
+        state.searchQuery = e.target.value;
+        if (state.searchQuery.trim().length > 0) {
+          state.mobileStationsExpanded = true;
+        }
+        renderStationCardsGrid();
+      });
+
+      const btnMobileStationToggle = document.getElementById('btnMobileStationToggle');
+      if (btnMobileStationToggle) {
+        btnMobileStationToggle.addEventListener('click', () => {
+          state.mobileStationsExpanded = !state.mobileStationsExpanded;
+          renderStationCardsGrid();
+        });
+      }
+      document.getElementById('stationSortSelect').addEventListener('change', e => {
+        state.sortBy = e.target.value;
+        renderStationCardsGrid();
+      });
+
+      // 5. Duration simulator buttons
+      document.querySelectorAll('.dur-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.simHours = parseInt(btn.getAttribute('data-hours'), 10);
+          renderResidentCommunicationSection();
+        });
+      });
+
+      // 6. Copy summary text
+      document.getElementById('btnCopyBriefingText').addEventListener('click', () => {
+        const text = document.getElementById('paBriefingSummaryText').innerText;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            showToast('요약 문구가 클립보드에 복사되었습니다.');
+          }).catch(() => fallbackCopyText(text));
+        } else {
+          fallbackCopyText(text);
+        }
+      });
+
+      // 7. FAQ Accordions
+      document.querySelectorAll('.faq-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const content = document.getElementById(`faq-content-${btn.getAttribute('data-faq')}`);
+          if (content) {
+            content.classList.toggle('hidden');
+          }
+        });
+      });
+    }
+
+    function fallbackCopyText(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('요약 문구가 복사되었습니다.');
+      } catch (e) {
+        showToast('복사에 실패했습니다.', true);
+      }
+      document.body.removeChild(ta);
+    }
+
+    // =========================================================================
+    // 8. INITIALIZATION ON LOAD
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      setupEventListeners();
+      updateHeaderStatusBadge();
+      renderAllSections();
+      loadRadiationData(false);
+      setInterval(() => loadRadiationData(false), CLIENT_REFRESH_SEC * 1000);
+    });
+  </script>
+</body>
+</html>

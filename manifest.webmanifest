@@ -1,0 +1,14 @@
+{
+  "name": "원자력발전소 실시간 주변 방사선량 모니터링",
+  "short_name": "원전 방사선량",
+  "description": "원자력발전소 주변 환경방사선량률 모니터링 및 일상 방사선량 비교 웹앱",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
