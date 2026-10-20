@@ -686,6 +686,8 @@
         id: 'flight',
         title: '서울 ↔ 뉴욕 항공여행 (왕복)',
         doseUsv: 160.0,
+        compareHours: 30,           // 인천↔JFK 왕복 비행시간(약 14시간 + 약 15.7시간)
+        compareLabel: '왕복 비행시간(약 30시간) 동안 공간선량 =',
         unitLabel: '왕복 비행 시 약 160 μSv (시간당 ~6 μSv/h)',
         category: '우주방사선',
         badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
@@ -706,6 +708,8 @@
         id: 'naturalKr',
         title: '대한민국 국민 연간 자연방사선량',
         doseUsv: 3000.0,
+        compareHours: 8760,
+        compareLabel: '1년 누적 공간선량 =',
         unitLabel: '연간 약 3,000 μSv (3.0 mSv)',
         category: '자연환경 평균',
         badgeColor: 'bg-teal-50 text-teal-700 border-teal-200',
@@ -1428,7 +1432,10 @@
       // Helper to build a benchmark detail card HTML
       function buildBenchmarkCardHtml(bm) {
         // 상단 '바나나 환산'과 같은 방향: 현재 1시간 선량 ÷ 이 항목 선량
-        const ratio = hasRate ? (activeTarget.rate / bm.doseUsv) : null;
+        // 비교 기간: 기본 1시간, 항목에 따라 비행시간·1년 누적으로 맞춘다
+        const compareHours = bm.compareHours || 1;
+        const compareLabel = bm.compareLabel || '현재 1시간 선량 =';
+        const ratio = hasRate ? (activeTarget.rate * compareHours / bm.doseUsv) : null;
         let multipleText = '-';
         if (ratio != null) {
           if (ratio >= 10) {
@@ -1455,7 +1462,7 @@
 
             <div class="mt-4 pt-3 border-t border-slate-200/80">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-500 font-medium">현재 1시간 선량 =</span>
+                <span class="text-slate-500 font-medium">${compareLabel}</span>
                 <span class="font-extrabold text-sky-700">${multipleText}</span>
               </div>
             </div>
@@ -1508,7 +1515,11 @@
           briefingEl.textContent = '측정 데이터를 불러오면 요약이 표시됩니다.';
         } else if (isWithinNatural(activeTarget.rate)) {
           const xrayRatio = Math.round(100 / Math.max(0.001, activeTarget.rate)).toLocaleString();
-          briefingEl.innerHTML = `"현재 <strong>${label}</strong>의 환경방사선량률은 <strong>${activeTarget.rate.toFixed(3)} μSv/h</strong>로, 우리나라 평시 자연방사선 범위(0.05~0.30 μSv/h) 이내의 안전한 수준입니다. 이는 병원에서 촬영하는 <strong>흉부 X-ray 1회(100 μSv)의 약 ${xrayRatio}분의 1</strong>에 불과하며, 바나나 1개를 섭취할 때 받는 자연방사선량(0.1 μSv)보다도 낮은 수준입니다."`;
+          // 바나나 비교는 측정값에 따라 문장을 바꾼다(0.1 μSv/h 이상이면 '낮다'고 쓸 수 없음)
+          const bananaText = activeTarget.rate < 0.1
+            ? '바나나 1개를 섭취할 때 받는 자연방사선량(0.1 μSv)보다도 낮은 수준입니다'
+            : `1시간 동안 받는 양은 바나나 약 ${(activeTarget.rate / 0.1).toFixed(1)}개를 섭취할 때 받는 자연방사선량과 비슷한 수준입니다`;
+          briefingEl.innerHTML = `"현재 <strong>${label}</strong>의 환경방사선량률은 <strong>${activeTarget.rate.toFixed(3)} μSv/h</strong>로, 우리나라 평시 자연방사선 범위(0.05~0.30 μSv/h) 이내의 안전한 수준입니다. 이는 병원에서 촬영하는 <strong>흉부 X-ray 1회(100 μSv)의 약 ${xrayRatio}분의 1</strong>에 불과하며, ${bananaText}."`;
         } else {
           briefingEl.innerHTML = `"현재 <strong>${label}</strong>의 환경방사선량률은 <strong>${activeTarget.rate.toFixed(3)} μSv/h</strong>로, 우리나라 평시 자연방사선 범위(0.05~0.30 μSv/h)를 넘는 값입니다."`;
         }
