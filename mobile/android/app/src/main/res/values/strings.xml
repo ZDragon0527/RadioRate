@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">원전 방사선량</string>
+    <string name="title_activity_main">원전 방사선량</string>
+    <string name="package_name">io.github.zdragon0527.radiorate</string>
+    <string name="custom_url_scheme">io.github.zdragon0527.radiorate</string>
+</resources>

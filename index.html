@@ -10,8 +10,9 @@
   <meta name="apple-mobile-web-app-title" content="원전 방사선량" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="assets/icon.svg" />
-  <title>한수원 원자력발전소 실시간 주변 방사선량 모니터링</title>
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>원자력발전소 실시간 주변 방사선량 모니터링</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -589,13 +590,35 @@
       </section>
     </div>
 
+    <!-- Install guide (hidden in installed app / standalone mode) -->
+    <section id="installGuide" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5 sm:p-6">
+      <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+        <span class="w-2 h-5 rounded-full bg-sky-600"></span>
+        휴대폰에 앱처럼 설치하기
+      </h3>
+      <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+          <p class="font-bold text-slate-800">안드로이드</p>
+          <p class="mt-1">아래 버튼으로 설치 파일(APK)을 받아 실행하세요. 처음 설치할 때 '출처를 알 수 없는 앱 설치'를 허용해야 할 수 있습니다. 또는 Chrome 메뉴(⋮)에서 <strong>홈 화면에 추가</strong>를 눌러도 됩니다.</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <a href="https://github.com/ZDragon0527/RadioRate/releases/latest/download/radiorate.apk" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white">안드로이드 앱 내려받기</a>
+            <button id="btnInstallPwa" type="button" class="hidden inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">홈 화면에 바로 설치</button>
+          </div>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+          <p class="font-bold text-slate-800">아이폰</p>
+          <p class="mt-1">Safari로 이 페이지를 연 뒤 하단의 <strong>공유 버튼(□↑)</strong> → <strong>홈 화면에 추가</strong>를 누르세요. 홈 화면 아이콘으로 앱처럼 실행됩니다.</p>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Footer -->
   <footer class="bg-white border-t border-slate-200 mt-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
       <div>
-        데이터 출처: 공공데이터포털 한국수력원자력(주)_원자력발전소 실시간 주변 방사선 량 (<code class="text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded break-all">https://apis.data.go.kr/B552041/radiorate/getradiorate</code>)
+        데이터 출처: 공공데이터포털(data.go.kr) 「원자력발전소 실시간 주변 방사선량」 오픈API (<code class="text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded break-all">https://apis.data.go.kr/B552041/radiorate/getradiorate</code>)
       </div>
       <div>
         약 30분 간격 자동 수집 · 측정 시각은 각 측정소 카드에 표시
@@ -891,6 +914,11 @@
           return `${PLANT_INFO[code].shortName}(${last ? '마지막 수집 ' + formatKst(last) : '수집 이력 없음'})`;
         });
         if (delayed.length) msg = `최신 측정 데이터 수신이 지연되고 있습니다: ${delayed.join(', ')}. 표시된 값은 마지막으로 수집된 값입니다.`;
+      }
+      if (!navigator.onLine) {
+        msg = state.loadState === 'ok'
+          ? '인터넷에 연결되어 있지 않아 마지막으로 받은 측정값을 표시합니다.'
+          : '인터넷에 연결되어 있지 않습니다. 연결되면 측정 데이터를 불러옵니다.';
       }
       el.textContent = msg;
       el.classList.toggle('hidden', !msg);
@@ -1689,7 +1717,42 @@
       renderAllSections();
       loadRadiationData(false);
       setInterval(() => loadRadiationData(false), CLIENT_REFRESH_SEC * 1000);
+      window.addEventListener('online', () => loadRadiationData(false));
+      window.addEventListener('offline', renderDataStatusBanner);
+      setupInstallGuide();
     });
+
+    // 오프라인 지원(서비스 워커)
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => { /* 오프라인 기능 없이 계속 동작 */ });
+      });
+    }
+
+    // 설치 안내: 이미 설치된 앱(홈 화면 실행·안드로이드 앱) 안에서는 숨긴다
+    let deferredInstallPrompt = null;
+    function setupInstallGuide() {
+      const guide = document.getElementById('installGuide');
+      const installBtn = document.getElementById('btnInstallPwa');
+      if (!guide) return;
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      const isAndroidApp = /RadioRateApp/.test(navigator.userAgent);
+      if (isStandalone || isAndroidApp) return;
+      guide.classList.remove('hidden');
+
+      window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        installBtn.classList.remove('hidden');
+      });
+      installBtn.addEventListener('click', async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        installBtn.classList.add('hidden');
+      });
+    }
   </script>
 </body>
 </html>

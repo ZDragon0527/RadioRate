@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>원전 방사선량</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+           font-family: -apple-system, 'Noto Sans KR', sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; box-sizing: border-box; }
+    .box { max-width: 360px; text-align: center; }
+    h1 { font-size: 18px; margin: 16px 0 8px; }
+    p { font-size: 14px; line-height: 1.6; color: #94a3b8; margin: 0 0 20px; }
+    button { font-size: 14px; font-weight: 600; padding: 10px 20px; border: 0; border-radius: 10px; background: #0284c7; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+    <h1>인터넷에 연결되어 있지 않습니다</h1>
+    <p>측정값을 불러오려면 인터넷 연결이 필요합니다. 한 번 연결해 열어 두면, 이후에는 연결이 끊겨도 마지막으로 받은 값을 볼 수 있습니다.</p>
+    <button type="button" onclick="location.href='https://zdragon0527.github.io/RadioRate/'">다시 시도</button>
+  </div>
+</body>
+</html>

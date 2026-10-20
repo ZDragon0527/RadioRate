@@ -1,0 +1,16 @@
+{
+  "name": "radiorate-mobile",
+  "private": true,
+  "version": "1.0.0",
+  "description": "원전 방사선량 안드로이드 앱 (웹앱을 여는 Capacitor 래퍼)",
+  "scripts": {
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}

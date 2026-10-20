@@ -1,0 +1,13 @@
+{
+  "appId": "io.github.zdragon0527.radiorate",
+  "appName": "원전 방사선량",
+  "webDir": "www",
+  "appendUserAgent": "RadioRateApp",
+  "server": {
+    "url": "https://zdragon0527.github.io/RadioRate/",
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

@@ -41,8 +41,19 @@ GitHub Actions (30분 간격)
 | `index.html` | 웹앱 본문 (Tailwind CSS·Chart.js CDN 사용) |
 | `scripts/fetch-radiation.mjs` | API 수집 스크립트 (Node 20+, 외부 패키지 없음) |
 | `.github/workflows/update-radiation.yml` | 수집 + Pages 배포 워크플로 |
-| `assets/hero.jpg`, `assets/icon.svg` | 배너 이미지, 앱 아이콘 |
-| `manifest.webmanifest` | 홈 화면 추가(설치형 웹앱)용 매니페스트 |
+| `assets/hero.jpg`, `assets/icon*.svg/png` | 배너 이미지, 앱 아이콘 |
+| `manifest.webmanifest`, `sw.js` | 홈 화면 설치(PWA)용 매니페스트, 오프라인 지원 서비스 워커 |
+| `mobile/` | 안드로이드 앱(Capacitor). 공개 웹앱 주소를 여는 앱 |
+| `.github/workflows/android-apk.yml` | 안드로이드 APK 빌드 후 GitHub Releases 게시 |
+
+## 휴대폰 앱
+
+- **아이폰**: Safari로 사이트를 열고 공유 → 홈 화면에 추가. (스토어 밖 설치 파일 배포는 Apple 정책상 불가)
+- **안드로이드**: [최신 APK 내려받기](https://github.com/ZDragon0527/RadioRate/releases/latest/download/radiorate.apk)
+  - 앱은 공개 웹앱(`https://zdragon0527.github.io/RadioRate/`)을 열므로, 웹을 고치면 앱을 다시 배포하지 않아도 반영됩니다.
+  - `mobile/` 폴더가 바뀌면 GitHub Actions가 APK를 빌드해 Releases에 올립니다(수동 실행도 가능).
+  - 서명 키는 저장소에 두지 않습니다. Secrets에 `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`를 등록해야 서명된 APK가 게시됩니다. 등록 전에는 확인용 디버그 빌드만 만들어집니다.
+  - 서명 키를 잃어버리면 기존 설치 앱을 업데이트할 수 없으므로 반드시 따로 백업하세요.
 
 ## 로컬 확인
 

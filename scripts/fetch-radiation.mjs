@@ -1,4 +1,4 @@
-// 공공데이터포털 "한국수력원자력(주)_원자력발전소 실시간 주변 방사선량" API를 호출해
+// 공공데이터포털 "원자력발전소 실시간 주변 방사선량" API를 호출해
 // 웹앱이 읽는 정적 JSON(data/radiation.json)을 만든다.
 //
 // 사용법: RADIORATE_SERVICE_KEY=... node scripts/fetch-radiation.mjs --prev prev.json --out _site/data/radiation.json
@@ -193,7 +193,7 @@ async function main() {
   if (okCount > 0) history.push(point);
 
   const result = {
-    source: '공공데이터포털 한국수력원자력(주)_원자력발전소 실시간 주변 방사선량',
+    source: '공공데이터포털 원자력발전소 실시간 주변 방사선량 오픈API',
     endpoint,
     fetchedAt,
     plants,
