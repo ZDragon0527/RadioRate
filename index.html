@@ -297,7 +297,7 @@
             <span id="kpiAnnualEquiv" class="text-2xl sm:text-3xl font-extrabold text-slate-900">-</span>
             <span class="text-xs font-semibold text-slate-500">mSv/년 (공간선량 환산)</span>
           </div>
-          <p class="text-xs text-slate-500 mt-1">국내 평균 자연방사선(약 3.0 mSv/년) 이내</p>
+          <p class="text-xs text-slate-500 mt-1">국내 평균 자연방사선(약 5.24 mSv/년) 이내</p>
         </div>
       </div>
     </section>
@@ -693,15 +693,26 @@
         source: '출처: 한국원자력안전기술원(KINS), 인천→뉴욕 편도 0.07~0.085 mSv(태양 활동에 따라 변동)의 왕복 환산'
       },
       {
+        id: 'medicalKr',
+        title: '국민 1인당 연간 의료방사선량',
+        doseUsv: 3130.0,
+        compareHours: 8760,
+        compareLabel: '1년 누적 공간선량 =',
+        category: '의료 이용 평균',
+        badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        desc: 'X-ray·CT 등 진단 목적의 의료방사선 검사로 국민 1인이 1년 동안 받는 평균 선량입니다.',
+        source: '출처: 질병관리청, 2024년 국민 의료방사선 평가 (2025년 8월 발표, 1인당 3.13 mSv)'
+      },
+      {
         id: 'naturalKr',
         title: '대한민국 국민 연간 자연방사선량',
-        doseUsv: 3080.0,
+        doseUsv: 5240.0,
         compareHours: 8760,
         compareLabel: '1년 누적 공간선량 =',
         category: '자연환경 평균',
         badgeColor: 'bg-teal-50 text-teal-700 border-teal-200',
         desc: '토양·우주·공기(라돈)·음식물 등을 통해 대한민국 국민 누구나 매년 자연적으로 받는 평균 방사선량입니다.',
-        source: '출처: 한국원자력안전기술원(KINS) 2009년 조사 (연간 약 3.08 mSv)'
+        source: '출처: 한국원자력안전기술원(KINS) 2020, 「대한민국 국민의 자연 및 인공 방사선 피폭량 조사」 (연간 약 5.24 mSv)'
       }
     ];
 
