@@ -298,6 +298,7 @@
             <span class="text-xs font-semibold text-slate-500">mSv/년 (공간선량 환산)</span>
           </div>
           <p class="text-xs text-slate-500 mt-1">국내 평균 자연방사선(약 5.24 mSv/년) 이내</p>
+          <p class="text-[10px] text-slate-400 mt-1.5 leading-snug">현재 측정값이 같은 장소에서 1년간 유지된다고 가정한 누적 공간선량입니다. 개인 피폭선량이나 원전 때문에 추가된 선량이 아니며, 자연 배경방사선이 포함되어 있습니다.</p>
         </div>
       </div>
     </section>
@@ -359,7 +360,7 @@
                 최근 24시간 주변 방사선량 추이
               </h3>
               <p class="text-xs text-slate-500 mt-0.5">
-                30분 간격 수집값 기준 · 선택 본부 평균선량률과 전국 자연방사선 평균선 비교
+                30분 간격 수집값 기준 · 선택 본부 평균선량률과 전국 감시망 연평균(2023년) 비교
               </p>
             </div>
             <span id="trendRangeBadge" class="text-xs font-medium text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
@@ -369,6 +370,7 @@
           <div class="relative h-72 w-full">
             <canvas id="hourlyTrendChart"></canvas>
           </div>
+          <p class="text-[10px] text-slate-400 mt-2 leading-snug">점선 출처: 한국원자력안전기술원(KINS), 『전국환경방사능조사』(2023), 본문 46쪽. 전국 231개 감시소 연평균 0.119 μSv/h의 반올림. 2023년 연평균 참고선이며, 현재 전국 실시간 평균이나 안전·위험 기준선이 아닙니다.</p>
         </div>
       </section>
 
@@ -472,6 +474,7 @@
                 <div id="simBananaEquiv" class="text-sm font-bold text-amber-300 mt-0.5">-</div>
               </div>
             </div>
+            <p class="text-[10px] text-slate-400 mt-2 leading-snug">현재 측정값이 유지된다고 가정해 계산한 공간선량이며, 개인 피폭선량과는 다릅니다.</p>
           </div>
         </div>
       </section>
@@ -507,6 +510,12 @@
         <!-- Desktop Full Grid (md and up) -->
         <div id="everydayComparisonGrid" class="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           <!-- Dynamically populated by JS -->
+        </div>
+
+        <!-- Note on ambient dose vs personal dose -->
+        <div class="mt-4 text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 space-y-1">
+          <p>※ '1년 누적 공간선량'은  측정값이 같은 장소에서 1년간 유지된다고 가정한 누적 공간선량입니다. 개인 피폭선량이나 원전 때문에 추가된 선량이 아니며, 자연 배경방사선이 포함되어 있습니다.</p>
+          <p>※ 환경방사선감시기는 몸 밖에서 들어오는 감마선(외부피폭)만 측정합니다. 국민 연간 자연방사선량에는 라돈 흡입·음식물 섭취 등 몸 안에서 받는 선량(내부피폭)이 포함되어 있어 비교 범위가 다릅니다.</p>
         </div>
 
         <!-- Visual Scale Infobar: Logarithmic / Step Ladder Comparison -->
@@ -547,7 +556,7 @@
               </svg>
             </button>
             <div id="faq-content-1" class="px-4 py-3.5 text-xs sm:text-sm text-slate-600 bg-white border-t border-slate-100 leading-relaxed">
-              대기 중에는 토양과 암석에서 자연적으로 방출된 라돈(Rn) 자핵종이 미세먼지 등과 결합해 떠다니고 있습니다. 비나 눈이 내리면 이 자연 방사성 물질들이 빗방울에 씻겨 지표면으로 함께 내려오면서 측정기 주변의 선량률이 일시적으로 <strong>0.02 ~ 0.08 μSv/h 가량 상승</strong>할 수 있습니다. 이는 원전 가동과는 무관한 전국 공통의 자연현상이며, 비가 그치면 짧은 시간(반감기 약 30분 내외) 안에 원래 수치로 회복됩니다.
+              대기 중에는 토양과 암석에서 자연적으로 방출된 라돈(Rn)의 자손핵종이 미세먼지 등과 결합해 떠다니고 있습니다. 비나 눈이 내리면 이 자연 방사성 물질들이 빗방울에 씻겨 지표면으로 함께 내려오면서 측정기 주변의 선량률이 <strong>일시적으로 상승</strong>할 수 있습니다. 상승 폭은 강우 강도와 지역에 따라 다릅니다. 강우에 따른 증가분은 약 30분마다 절반 정도로 줄어들어, 보통 몇 시간 안에 평상 수준으로 돌아옵니다. 이런 일시 상승은 전국 어디서나 나타나는 자연현상입니다.
             </div>
           </div>
 
@@ -573,7 +582,7 @@
               </svg>
             </button>
             <div id="faq-content-3" class="hidden px-4 py-3.5 text-xs sm:text-sm text-slate-600 bg-white border-t border-slate-100 leading-relaxed">
-              발전소 주변 환경방사선감시기가 24시간 실시간으로 측정한 자료는 <strong>공공데이터포털</strong>을 통해 투명하게 공개될 뿐만 아니라, 규제 전문기관인 <strong>한국원자력안전기술원(KINS) 국가환경방사선자동감시망(IERNet)</strong> 및 지자체·지역 주민이 참여하는 <strong>민간환경감시기구</strong>에서 상시 교차 측정·검증하고 있습니다.
+              발전소 주변 환경방사선감시기가 24시간 실시간으로 측정한 자료는 <strong>공공데이터포털</strong>을 통해 공개됩니다. 이와 별도로 규제 전문기관인 <strong>한국원자력안전기술원(KINS)</strong>은 <strong>국가환경방사선자동감시망(IERNet)</strong>을 운영하고, 지자체·지역 주민이 참여하는 <strong>민간환경감시기구</strong>도 독립적인 감시·조사를 수행합니다.
             </div>
           </div>
         </div>
@@ -659,8 +668,9 @@
         doseUsv: 0.1,
         category: '식품 자연방사선',
         badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
-        desc: '바나나에 풍부한 칼륨(K-40)에서 나오는 극미량의 자연방사선으로, 체내에 축적되지 않고 자연 배출됩니다.',
-        source: '근거: 바나나 1개 섭취 시 약 0.1 μSv (칼륨-40 섭취 선량의 일반 환산값)'
+        desc: '바나나에 풍부한 칼륨(K-40)에서 나오는 극미량의 자연방사선입니다. 체내 칼륨은 항상성에 의해 일정하게 조절되며 과잉분은 배출됩니다.',
+        source: '출처: 서울대학교 원자력 위키 「방사성 칼륨(K-40)과 식품; 바나나 선량」, 약 0.08 μSv를 반올림한 근삿값(이해를 돕기 위한 비유)',
+        sourceUrl: 'https://atomic.snu.ac.kr/%EB%B0%A9%EC%82%AC%EC%84%B1_%EC%B9%BC%EB%A5%A8(K-40)%EA%B3%BC_%EC%8B%9D%ED%92%88;_%EB%B0%94%EB%82%98%EB%82%98_%EC%84%A0%EB%9F%89'
       },
       {
         id: 'dental',
@@ -669,7 +679,8 @@
         category: '일상 의료검진',
         badgeColor: 'bg-sky-50 text-sky-700 border-sky-200',
         desc: '치과 진료 시 치아 상태를 확인하기 위해 촬영하는 간단한 구강 엑스레이 1회 선량입니다.',
-        source: '근거: 치과 구내 촬영 1회 약 5 μSv (일반 문헌값)'
+        source: '출처: RadiologyInfo(미국영상의학회·북미영상의학회), 성인 대표값 0.005 mSv. 장비·촬영 방법에 따라 달라짐',
+        sourceUrl: 'https://www.radiologyinfo.org/en/info/safety-xray'
       },
       {
         id: 'chestXray',
@@ -678,7 +689,8 @@
         category: '건강검진 기준',
         badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
         desc: '일반 건강검진에서 가장 흔히 촬영하는 흉부 방사선 검사 1회 시 받는 선량입니다.',
-        source: '출처: 서울대학교 원자력 위키 (흉부 엑스선 촬영 약 0.1 mSv)'
+        source: '출처: RadiologyInfo(미국영상의학회·북미영상의학회)·서울대학교 원자력 위키, 성인 대표값 0.1 mSv. 장비·촬영 방법에 따라 달라짐',
+        sourceUrl: 'https://www.radiologyinfo.org/en/info/safety-xray'
       },
       {
         id: 'flight',
@@ -700,7 +712,7 @@
         compareLabel: '1년 누적 공간선량 =',
         category: '의료 이용 평균',
         badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        desc: 'X-ray·CT 등 진단 목적의 의료방사선 검사로 국민 1인이 1년 동안 받는 평균 선량입니다.',
+        desc: 'X-ray·CT 등 진단 목적의 의료방사선 검사로 국민 1인이 1년 동안 받는 평균 선량입니다. 전 국민 평균 추정치로, 개인별 실제 선량과는 다릅니다.',
         source: '출처: 질병관리청, 2024년 국민 의료방사선 평가 (2025년 8월 발표, 1인당 3.13 mSv)'
       },
       {
@@ -711,7 +723,7 @@
         compareLabel: '1년 누적 공간선량 =',
         category: '자연환경 평균',
         badgeColor: 'bg-teal-50 text-teal-700 border-teal-200',
-        desc: '토양·우주·공기(라돈)·음식물 등을 통해 대한민국 국민 누구나 매년 자연적으로 받는 평균 방사선량입니다.',
+        desc: '토양·우주·공기(라돈)·음식물 등 자연방사선에 의한 국민 평균 유효선량 평가값입니다. 이전 평가(3.08 mSv)보다 높은 것은 라돈 선량 환산 기준이 바뀌었기 때문이며, 방사선 환경이 나빠졌다는 뜻이 아닙니다.',
         source: '출처: 한국원자력안전기술원(KINS) 2020, 「대한민국 국민의 자연 및 인공 방사선 피폭량 조사」 (연간 약 5.24 mSv)'
       }
     ];
@@ -1226,7 +1238,7 @@
               pointBackgroundColor: '#0284c7'
             },
             {
-              label: '국내 평시 자연방사선 평균 (약 0.12 μSv/h)',
+              label: '전국 감시망 연평균 (약 0.12 μSv/h, 2023년)',
               data: series.map(() => 0.12),
               borderColor: '#10b981',
               borderDash: [5, 5],
@@ -1467,7 +1479,7 @@
             const perHourMax = doseMax / compareHours;
             const xMin = Math.round(perHourMin / activeTarget.rate);
             const xMax = Math.round(perHourMax / activeTarget.rate);
-            desc = `고도 10km 상공 비행 중에는 우주방사선 영향으로 시간당 약 ${perHourMin.toFixed(1)}~${perHourMax.toFixed(1)} μSv를 받습니다. 이는 현재 측정값(${activeTarget.rate.toFixed(3)} μSv/h)의 약 ${xMin === xMax ? xMin : `${xMin}~${xMax}`}배입니다.`;
+            desc = `고도 10km 상공 비행 중에는 우주방사선 영향으로 시간당 약 ${perHourMin.toFixed(1)}~${perHourMax.toFixed(1)} μSv를 받습니다. 이는 현재 측정값(${activeTarget.rate.toFixed(3)} μSv/h)의 약 ${xMin === xMax ? xMin : `${xMin}~${xMax}`}배입니다. 실제 선량은 항로·고도·태양 활동에 따라 다릅니다.`;
           }
         } else if (bm.id === 'flight') {
           desc = '고도 10km 상공 비행 중에는 우주방사선 영향으로 지상보다 높은 선량을 받습니다.';
@@ -1491,7 +1503,7 @@
                 <span class="text-slate-500 font-medium">${compareLabel}</span>
                 <span class="font-extrabold text-sky-700 text-right whitespace-nowrap">${multipleText}</span>
               </div>
-              <p class="text-[10px] text-slate-400 mt-2 leading-snug">${bm.source}</p>
+              <p class="text-[10px] text-slate-400 mt-2 leading-snug">${bm.sourceUrl ? `<a href="${bm.sourceUrl}" target="_blank" rel="noopener noreferrer" class="underline decoration-slate-300 hover:text-slate-600">${bm.source}</a>` : bm.source}</p>
             </div>
           </div>
         `;
