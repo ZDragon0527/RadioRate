@@ -431,90 +431,35 @@
     <!-- SECTION B: RESIDENT COMMUNICATION & EVERYDAY RADIATION COMPARISON -->
     <div id="sectionCommunication" class="space-y-6">
 
-      <!-- Resident-Friendly Banner & Interactive Calculator -->
+      <!-- 알기 쉬운 방사선 비교: 안내 문구 + 일상 속 방사선량 비교(한눈에 비교하기 통합) -->
       <section class="bg-gradient-to-br from-sky-900 via-slate-900 to-indigo-950 text-white rounded-2xl shadow-md border border-sky-800/60 p-5 sm:p-7">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div class="space-y-2 max-w-2xl">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-300 border border-sky-400/30">
-              알기 쉬운 방사선 비교
-            </span>
-            <h3 class="text-lg sm:text-2xl font-extrabold tracking-tight leading-snug">
-              <!-- 모바일: 2줄로 줄인 문구 / 태블릿·PC: 기존 문구 -->
-              <span class="sm:hidden">"지금 발전소 주변 방사선량,<br />일상생활과 비교하면?"</span>
-              <span class="hidden sm:inline">"지금 발전소 주변 방사선량, 우리 일상생활과 비교하면 어느 정도일까요?"</span>
-            </h3>
-            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              방사선은 공기·토양·음식물·우주 등 자연 어디에나 존재합니다. 현재 측정된 <strong id="commSelectedTargetName" class="text-sky-300 underline decoration-sky-400/60 underline-offset-4">월성원자력본부 평균</strong> 측정값(<strong id="commSelectedRateText" class="text-white">-</strong>)을 일상 속 친숙한 활동과 직접 비교해 보세요.
-            </p>
-          </div>
-
-          <!-- Interactive Exposure Duration Selector -->
-          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 min-w-[280px] sm:min-w-[340px]">
-            <div class="flex items-center justify-between gap-2 text-xs text-sky-200 mb-2">
-              <span class="font-semibold whitespace-nowrap">기간별 누적 선량 시뮬레이터</span>
-              <!-- 모바일은 짧은 이름(예: 월성본부 평균)으로 한 줄 유지 -->
-              <span class="min-w-0 px-2 py-0.5 rounded bg-sky-500/30 text-white font-bold truncate">
-                <span id="simSelectedStationBadgeShort" class="sm:hidden">월성본부 평균</span>
-                <span id="simSelectedStationBadge" class="hidden sm:inline">월성본부 평균</span>
-              </span>
-            </div>
-
-            <div class="grid grid-cols-4 gap-1.5 mb-3" id="durationButtonsContainer">
-              <button type="button" data-hours="1" class="dur-btn py-1.5 rounded-lg text-xs font-bold bg-sky-500 text-white shadow">
-                1시간
-              </button>
-              <button type="button" data-hours="24" class="dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20">
-                <span class="sm:hidden">하루</span><span class="hidden sm:inline">하루 (24h)</span>
-              </button>
-              <button type="button" data-hours="720" class="dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20">
-                <span class="sm:hidden">1개월</span><span class="hidden sm:inline">1개월 (30일)</span>
-              </button>
-              <button type="button" data-hours="8760" class="dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20">
-                <span class="sm:hidden">1년</span><span class="hidden sm:inline">1년 (365일)</span>
-              </button>
-            </div>
-
-            <div class="bg-slate-950/60 rounded-xl p-3 border border-white/10 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-              <div>
-                <div class="text-[11px] text-slate-400 whitespace-nowrap" id="simCumulativeLabel">1시간 누적 공간선량</div>
-                <div class="flex items-baseline gap-1.5 mt-0.5">
-                  <span id="simCumulativeValue" class="text-2xl font-extrabold text-emerald-400">-</span>
-                  <span class="text-xs font-semibold text-slate-300">μSv</span>
-                  <span id="simCumulativeMsv" class="hidden sm:inline text-[11px] text-slate-400 ml-1"></span>
-                </div>
-                <!-- 모바일: mSv 환산값은 숫자 아래 작게 표시해 가로 공간을 아낀다 -->
-                <div id="simCumulativeMsvMobile" class="sm:hidden text-[10px] text-slate-400 leading-tight"></div>
-              </div>
-              <div class="ml-auto text-right">
-                <div class="text-[11px] text-slate-400">바나나 환산</div>
-                <div id="simBananaEquiv" class="text-sm font-bold text-amber-300 mt-0.5 whitespace-nowrap">-</div>
-              </div>
-            </div>
-            <p class="text-[10px] text-slate-400 mt-2 leading-snug">현재 측정값이 유지된다고 가정해 계산한 공간선량이며, 개인 피폭선량과는 다릅니다.</p>
-          </div>
+        <div class="space-y-2 max-w-3xl">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-300 border border-sky-400/30">
+            알기 쉬운 방사선 비교
+          </span>
+          <h3 class="text-lg sm:text-2xl font-extrabold tracking-tight leading-snug">
+            <!-- 모바일: 2줄로 줄인 문구 / 태블릿·PC: 기존 문구 -->
+            <span class="sm:hidden">"지금 발전소 주변 방사선량,<br />일상생활과 비교하면?"</span>
+            <span class="hidden sm:inline">"지금 발전소 주변 방사선량, 우리 일상생활과 비교하면 어느 정도일까요?"</span>
+          </h3>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            방사선은 공기·토양·음식물·우주 등 자연 어디에나 존재합니다. 현재 측정된 <strong id="commSelectedTargetName" class="text-sky-300 underline decoration-sky-400/60 underline-offset-4">월성원자력본부 평균</strong> 측정값(<strong id="commSelectedRateText" class="text-white">-</strong>)을 일상 속 친숙한 활동과 직접 비교해 보세요.
+          </p>
         </div>
-      </section>
 
-      <!-- Everyday Life Radiation Comparison Cards -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5 sm:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
-          <div>
-            <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span class="w-2 h-5 rounded-full bg-emerald-600"></span>
-              일상 속 방사선량 vs 현재 발전소 주변 측정값 한눈에 비교하기
-            </h3>
-            <p class="text-xs text-slate-500 mt-0.5">
-              현재 선택된 <strong id="compSectionSubTitle" class="text-slate-700">-</strong> 측정치와 일상생활·의료·자연방사선 기준치를 비교한 결과입니다.
-            </p>
-          </div>
-          <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg font-medium">
+        <!-- 비교 기준 안내 -->
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs text-slate-300">
+            비교 기준: <strong id="compSectionSubTitle" class="text-white">-</strong>
+          </p>
+          <span class="text-[11px] text-slate-300 bg-white/10 border border-white/15 px-3 py-1 rounded-lg font-medium">
             1 mSv(밀리시버트) = 1,000 μSv(마이크로시버트)
-          </div>
+          </span>
         </div>
 
         <!-- Mobile-only Item Title Selection & Selected Detail View -->
-        <div class="md:hidden space-y-3">
-          <p class="text-xs font-semibold text-slate-600">비교할 항목 제목을 선택하면 상세 내용이 표시됩니다:</p>
+        <div class="md:hidden mt-3 space-y-3">
+          <p class="text-xs font-semibold text-slate-300">비교할 항목을 선택하면 상세 내용이 표시됩니다:</p>
           <div id="mobileBenchmarkSelectGrid" class="grid grid-cols-2 gap-2">
             <!-- Dynamically populated by JS -->
           </div>
@@ -524,29 +469,29 @@
         </div>
 
         <!-- Desktop Full Grid (md and up) -->
-        <div id="everydayComparisonGrid" class="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div id="everydayComparisonGrid" class="hidden md:grid mt-4 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <!-- Dynamically populated by JS -->
         </div>
 
         <!-- Note on ambient dose vs personal dose -->
-        <div class="mt-4 text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 space-y-1">
-          <p>※ '1년 누적 공간선량'은  측정값이 같은 장소에서 1년간 유지된다고 가정한 누적 공간선량입니다. 개인 피폭선량이나 원전 때문에 추가된 선량이 아니며, 자연 배경방사선이 포함되어 있습니다.</p>
+        <div class="mt-4 text-[11px] text-slate-300 leading-relaxed bg-white/5 border border-white/10 rounded-xl px-4 py-3 space-y-1">
+          <p>※ '1년 누적 공간선량'은 측정값이 같은 장소에서 1년간 유지된다고 가정한 누적 공간선량입니다. 개인 피폭선량이나 원전 때문에 추가된 선량이 아니며, 자연 배경방사선이 포함되어 있습니다.</p>
           <p>※ 환경방사선감시기는 몸 밖에서 들어오는 감마선(외부피폭)만 측정합니다. 국민 연간 자연방사선량에는 라돈 흡입·음식물 섭취 등 몸 안에서 받는 선량(내부피폭)이 포함되어 있어 비교 범위가 다릅니다.</p>
         </div>
 
-        <!-- Visual Scale Infobar: Logarithmic / Step Ladder Comparison -->
-        <div class="mt-6 bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200">
-          <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-            <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <!-- 현재 측정값 한 줄 요약 -->
+        <div class="mt-4 bg-white/10 rounded-2xl p-4 sm:p-5 border border-white/15">
+          <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4 text-sky-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>현재 측정값 한 줄 요약</span>
           </h4>
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/90">
-            <p id="paBriefingSummaryText" class="text-xs sm:text-sm text-slate-700 leading-relaxed">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-950/50 p-4 rounded-xl border border-white/10">
+            <p id="paBriefingSummaryText" class="text-xs sm:text-sm text-slate-100 leading-relaxed">
               측정 데이터를 불러오면 요약이 표시됩니다.
             </p>
-            <button id="btnCopyBriefingText" type="button" class="shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition">
+            <button id="btnCopyBriefingText" type="button" class="shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-400/30 transition">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
@@ -786,7 +731,6 @@
       viewMode: 'integrated',       // 'integrated' | 'dashboard' | 'communication'
       searchQuery: '',
       sortBy: 'default',
-      simHours: 1,                  // 1, 24, 720, 8760
       selectedStationForComm: null, // null means use selected plant average
       mobileStationsExpanded: false,// mobile collapse/expand toggle state for station cards
       selectedBenchmarkId: null,    // mobile selected benchmark item id for everyday comparison
@@ -1525,42 +1469,7 @@
 
       document.getElementById('commSelectedTargetName').textContent = activeTarget.label;
       document.getElementById('commSelectedRateText').textContent = rateText;
-      document.getElementById('simSelectedStationBadge').textContent = activeTarget.label;
-      document.getElementById('simSelectedStationBadgeShort').textContent = state.selectedStationForComm
-        ? state.selectedStationForComm.expl
-        : state.selectedPlant === 'ALL' ? '전 본부 평균' : `${PLANT_INFO[state.selectedPlant].shortName} 평균`;
       document.getElementById('compSectionSubTitle').textContent = `${activeTarget.label} (${rateText})`;
-
-      // Duration simulator calculation
-      const durationNames = {
-        1: '1시간 누적 공간선량',
-        24: '하루(24시간) 누적 공간선량',
-        720: '1개월(30일) 누적 공간선량',
-        8760: '1년(365일) 누적 공간선량'
-      };
-      document.getElementById('simCumulativeLabel').textContent = durationNames[state.simHours] || `${state.simHours}시간 누적 공간선량`;
-      if (hasRate) {
-        const cumulativeUsv = +(activeTarget.rate * state.simHours).toFixed(3);
-        document.getElementById('simCumulativeValue').textContent = cumulativeUsv.toLocaleString();
-        document.getElementById('simCumulativeMsv').textContent = `(= ${(cumulativeUsv / 1000).toFixed(5)} mSv)`;
-        document.getElementById('simCumulativeMsvMobile').textContent = `= ${(cumulativeUsv / 1000).toFixed(5)} mSv`;
-        document.getElementById('simBananaEquiv').textContent = `바나나 약 ${Number((cumulativeUsv / 0.1).toFixed(1)).toLocaleString()}개 분량`;
-      } else {
-        document.getElementById('simCumulativeValue').textContent = '-';
-        document.getElementById('simCumulativeMsv').textContent = '';
-        document.getElementById('simCumulativeMsvMobile').textContent = '';
-        document.getElementById('simBananaEquiv').textContent = '-';
-      }
-
-      // Update duration button active styles
-      document.querySelectorAll('.dur-btn').forEach(btn => {
-        const hrs = parseInt(btn.getAttribute('data-hours'), 10);
-        if (hrs === state.simHours) {
-          btn.className = 'dur-btn py-1.5 rounded-lg text-xs font-bold bg-sky-500 text-white shadow';
-        } else {
-          btn.className = 'dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20';
-        }
-      });
 
       // 비율 r(현재 선량 ÷ 항목 선량)을 '약 n배' 또는 '약 n분의 1' 형태로 바꾼다
       function ratioParts(r) {
@@ -1609,24 +1518,24 @@
         }
 
         return `
-          <div class="rounded-xl border border-slate-200 p-4 bg-slate-50/50 hover:bg-white hover:shadow-sm transition flex flex-col justify-between">
+          <div class="rounded-xl border border-white/10 p-4 bg-white/5 hover:bg-white/10 transition flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between gap-2 mb-2">
                 <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${bm.badgeColor}">
                   ${bm.category}
                 </span>
-                <span class="text-xs font-extrabold text-slate-900">${doseLabel}</span>
+                <span class="text-xs font-extrabold text-white">${doseLabel}</span>
               </div>
-              <h4 class="text-sm font-bold text-slate-900">${bm.title}</h4>
-              <p class="text-xs text-slate-500 mt-1 leading-relaxed">${desc}</p>
+              <h4 class="text-sm font-bold text-white">${bm.title}</h4>
+              <p class="text-xs text-slate-300 mt-1 leading-relaxed">${desc}</p>
             </div>
 
-            <div class="mt-4 pt-3 border-t border-slate-200/80">
+            <div class="mt-4 pt-3 border-t border-white/10">
               <div class="flex items-center justify-between gap-2 text-xs">
-                <span class="text-slate-500 font-medium">${compareLabel}</span>
-                <span class="font-extrabold text-sky-700 text-right whitespace-nowrap">${multipleText}</span>
+                <span class="text-slate-300 font-medium">${compareLabel}</span>
+                <span class="font-extrabold text-sky-300 text-right whitespace-nowrap">${multipleText}</span>
               </div>
-              <p class="text-[10px] text-slate-400 mt-2 leading-snug">${bm.sourceUrl ? `<a href="${bm.sourceUrl}" target="_blank" rel="noopener noreferrer" class="underline decoration-slate-300 hover:text-slate-600">${bm.source}</a>` : bm.source}</p>
+              <p class="text-[10px] text-slate-400 mt-2 leading-snug">${bm.sourceUrl ? `<a href="${bm.sourceUrl}" target="_blank" rel="noopener noreferrer" class="underline decoration-slate-500 hover:text-slate-200">${bm.source}</a>` : bm.source}</p>
             </div>
           </div>
         `;
@@ -1645,8 +1554,8 @@
         mobileSelectGrid.innerHTML = EVERYDAY_BENCHMARKS.map(bm => {
           const isSelected = state.selectedBenchmarkId === bm.id;
           const btnStyle = isSelected
-            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-            : 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100';
+            ? 'bg-sky-500 text-white border-sky-500 shadow-sm'
+            : 'bg-white/5 text-slate-100 border-white/15 hover:bg-white/10';
           return `
             <button type="button" data-benchmark-id="${bm.id}" class="mobile-benchmark-btn text-left px-3 py-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-between gap-1.5 ${btnStyle}">
               <span class="truncate">${bm.title}</span>
@@ -1676,12 +1585,7 @@
         if (!hasRate) {
           briefingEl.textContent = '측정 데이터를 불러오면 요약이 표시됩니다.';
         } else if (isWithinNatural(activeTarget.rate)) {
-          const xrayRatio = Math.round(100 / Math.max(0.001, activeTarget.rate)).toLocaleString();
-          // 바나나 비교는 측정값에 따라 문장을 바꾼다(0.1 μSv/h 이상이면 '낮다'고 쓸 수 없음)
-          const bananaText = activeTarget.rate < 0.1
-            ? '바나나 1개를 섭취할 때 받는 자연방사선량(0.1 μSv)보다도 낮은 수준입니다'
-            : `1시간 동안 받는 양은 바나나 약 ${(activeTarget.rate / 0.1).toFixed(1)}개를 섭취할 때 받는 자연방사선량과 비슷한 수준입니다`;
-          briefingEl.innerHTML = `"현재 <strong>${label}</strong>의 환경방사선량률은 <strong>${activeTarget.rate.toFixed(3)} μSv/h</strong>로, 우리나라 평시 자연방사선 범위(0.05~0.30 μSv/h) 이내의 안전한 수준입니다. 이는 병원에서 촬영하는 <strong>흉부 X-ray 1회(100 μSv)의 약 ${xrayRatio}분의 1</strong>에 불과하며, ${bananaText}."`;
+          briefingEl.innerHTML = `"현재 <strong>${label}</strong>의 환경방사선량률은 <strong>${activeTarget.rate.toFixed(3)} μSv/h</strong>로, 우리나라 평시 자연방사선 범위(0.05~0.30 μSv/h) 이내의 안전한 수준입니다."`;
         } else {
           briefingEl.innerHTML = `"현재 <strong>${label}</strong>의 환경방사선량률은 <strong>${activeTarget.rate.toFixed(3)} μSv/h</strong>로, 우리나라 평시 자연방사선 범위(0.05~0.30 μSv/h)를 넘는 값입니다."`;
         }
@@ -1757,14 +1661,6 @@
       document.getElementById('stationSortSelect').addEventListener('change', e => {
         state.sortBy = e.target.value;
         renderStationCardsGrid();
-      });
-
-      // 5. Duration simulator buttons
-      document.querySelectorAll('.dur-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state.simHours = parseInt(btn.getAttribute('data-hours'), 10);
-          renderResidentCommunicationSection();
-        });
       });
 
       // 6. Copy summary text
