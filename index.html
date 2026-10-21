@@ -12,7 +12,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>원자력발전소 실시간 주변 방사선량 모니터링</title>
+  <title>원자력발전소 주변 방사선량 모니터링</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -83,8 +83,8 @@
               </span>
             </div>
             <h1 class="text-base sm:text-lg font-bold tracking-tight text-white sm:mt-0.5 whitespace-nowrap truncate">
-              <span class="sm:hidden">원전 주변 실시간 방사선량</span>
-              <span class="hidden sm:inline">원자력발전소 실시간 주변 방사선량 모니터링</span>
+              <span class="sm:hidden">원전 주변 방사선량</span>
+              <span class="hidden sm:inline">원자력발전소 주변 방사선량 모니터링</span>
             </h1>
           </div>
         </div>
@@ -184,7 +184,7 @@
           </div>
           <div class="flex flex-wrap items-baseline gap-3">
             <h2 id="heroPlantTitle" class="text-lg sm:text-3xl font-extrabold text-white tracking-tight whitespace-nowrap">
-              원전 주변 실시간 방사선량
+              원전 주변 방사선량
             </h2>
             <span id="heroPlantCodeBadge" class="text-xs font-mono px-2.5 py-0.5 rounded bg-white/10 text-sky-300 border border-white/15">
               경상북도 경주시 양남면·문무대왕면·감포읍 일원
@@ -313,7 +313,7 @@
           <div>
             <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
               <span class="w-2 h-5 rounded-full bg-sky-600"></span>
-              5개 원자력본부 실시간 주변 방사선량 비교 (클릭 시 해당 본부로 전환)
+              5개 원자력본부 주변 방사선량 비교 (클릭 시 해당 본부로 전환)
             </h3>
             <p class="text-xs text-slate-500 mt-0.5">
               월성본부를 기본으로 고리·새울·한빛·한울본부 및 5개 본부 통합 현황을 즉시 전환하여 비교할 수 있습니다.
@@ -1036,7 +1036,7 @@
 
       const heroTitleEl = document.getElementById('heroPlantTitle');
       if (heroTitleEl) {
-        heroTitleEl.innerHTML = `<span class="sm:hidden">원전 주변 실시간 방사선량 (${plantMeta.shortName})</span><span class="hidden sm:inline">${plantMeta.name} 주변 실시간 방사선량</span>`;
+        heroTitleEl.innerHTML = `<span class="sm:hidden">원전 주변 방사선량 (${plantMeta.shortName})</span><span class="hidden sm:inline">${plantMeta.name} 주변 방사선량</span>`;
       }
       document.getElementById('heroPlantCodeBadge').textContent = plantMeta.codeBadge;
       document.getElementById('heroAvgLabel').textContent = `${plantMeta.shortName} 평균 방사선량률`;
