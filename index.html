@@ -464,28 +464,30 @@
                 1시간
               </button>
               <button type="button" data-hours="24" class="dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20">
-                하루 (24h)
+                <span class="sm:hidden">하루</span><span class="hidden sm:inline">하루 (24h)</span>
               </button>
               <button type="button" data-hours="720" class="dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20">
-                1개월 (30일)
+                <span class="sm:hidden">1개월</span><span class="hidden sm:inline">1개월 (30일)</span>
               </button>
               <button type="button" data-hours="8760" class="dur-btn py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-slate-200 hover:bg-white/20">
-                1년 (365일)
+                <span class="sm:hidden">1년</span><span class="hidden sm:inline">1년 (365일)</span>
               </button>
             </div>
 
-            <div class="bg-slate-950/60 rounded-xl p-3 border border-white/10 flex items-center justify-between">
+            <div class="bg-slate-950/60 rounded-xl p-3 border border-white/10 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
               <div>
-                <div class="text-[11px] text-slate-400" id="simCumulativeLabel">1시간 누적 공간선량</div>
+                <div class="text-[11px] text-slate-400 whitespace-nowrap" id="simCumulativeLabel">1시간 누적 공간선량</div>
                 <div class="flex items-baseline gap-1.5 mt-0.5">
                   <span id="simCumulativeValue" class="text-2xl font-extrabold text-emerald-400">-</span>
                   <span class="text-xs font-semibold text-slate-300">μSv</span>
-                  <span id="simCumulativeMsv" class="text-[11px] text-slate-400 ml-1"></span>
+                  <span id="simCumulativeMsv" class="hidden sm:inline text-[11px] text-slate-400 ml-1"></span>
                 </div>
+                <!-- 모바일: mSv 환산값은 숫자 아래 작게 표시해 가로 공간을 아낀다 -->
+                <div id="simCumulativeMsvMobile" class="sm:hidden text-[10px] text-slate-400 leading-tight"></div>
               </div>
-              <div class="text-right">
+              <div class="ml-auto text-right">
                 <div class="text-[11px] text-slate-400">바나나 환산</div>
-                <div id="simBananaEquiv" class="text-sm font-bold text-amber-300 mt-0.5">-</div>
+                <div id="simBananaEquiv" class="text-sm font-bold text-amber-300 mt-0.5 whitespace-nowrap">-</div>
               </div>
             </div>
             <p class="text-[10px] text-slate-400 mt-2 leading-snug">현재 측정값이 유지된다고 가정해 계산한 공간선량이며, 개인 피폭선량과는 다릅니다.</p>
@@ -1541,10 +1543,12 @@
         const cumulativeUsv = +(activeTarget.rate * state.simHours).toFixed(3);
         document.getElementById('simCumulativeValue').textContent = cumulativeUsv.toLocaleString();
         document.getElementById('simCumulativeMsv').textContent = `(= ${(cumulativeUsv / 1000).toFixed(5)} mSv)`;
+        document.getElementById('simCumulativeMsvMobile').textContent = `= ${(cumulativeUsv / 1000).toFixed(5)} mSv`;
         document.getElementById('simBananaEquiv').textContent = `바나나 약 ${Number((cumulativeUsv / 0.1).toFixed(1)).toLocaleString()}개 분량`;
       } else {
         document.getElementById('simCumulativeValue').textContent = '-';
         document.getElementById('simCumulativeMsv').textContent = '';
+        document.getElementById('simCumulativeMsvMobile').textContent = '';
         document.getElementById('simBananaEquiv').textContent = '-';
       }
 
