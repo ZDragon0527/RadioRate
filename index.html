@@ -373,7 +373,7 @@
                 최근 24시간 주변 방사선량 추이
               </h3>
               <p class="text-xs text-slate-500 mt-0.5">
-                약 15분 간격 수집값 기준 · 선택 본부 평균선량률과 전국 감시망 연평균(2023년) 비교
+                약 10분 간격 수집값 기준 · 선택 본부 평균선량률과 전국 감시망 연평균(2023년) 비교
               </p>
             </div>
             <span id="trendRangeBadge" class="text-xs font-medium text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
@@ -654,7 +654,7 @@
         데이터 출처: 공공데이터포털(data.go.kr) 「원자력발전소 실시간 주변 방사선량」 오픈API (<code class="text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded break-all">https://apis.data.go.kr/B552041/radiorate/getradiorate</code>)
       </div>
       <div>
-        약 15분 간격 자동 수집 · 측정 시각은 각 측정소 카드에 표시
+        약 10분 간격 자동 수집 · 측정 시각은 각 측정소 카드에 표시
       </div>
     </div>
   </footer>
@@ -672,7 +672,7 @@
     // =========================================================================
     const DATA_URL = 'data/radiation.json';
     const CLIENT_REFRESH_SEC = 300;              // 브라우저가 JSON을 다시 읽는 주기(수집 주기는 워크플로에서 결정)
-    const STALE_AFTER_MS = 60 * 60 * 1000;       // 마지막 수집 후 1시간이 지나면 '수신 지연' 표시(수집 주기 약 15분)
+    const STALE_AFTER_MS = 60 * 60 * 1000;       // 마지막 수집 후 1시간이 지나면 '수신 지연' 표시(수집 주기 약 10분)
     const NATURAL_MIN = 0.05;
     const NATURAL_MAX = 0.30;                    // 국내 평시 자연방사선 범위 상한(μSv/h)
     const PLANT_CODES = ['WS', 'KR', 'SU', 'YK', 'UJ'];

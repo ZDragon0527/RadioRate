@@ -1,7 +1,7 @@
 name: 방사선량 데이터 수집 및 배포
 
 on:
-  # 주 실행 계기: 외부 예약 서비스(cron-job.org 등)가 약 15분마다 workflow_dispatch를 호출한다.
+  # 주 실행 계기: 외부 예약 서비스(cron-job.org 등)가 약 10분마다 workflow_dispatch를 호출한다.
   #   GitHub 자체 예약(schedule)은 부하 시 지연·누락이 잦아 주기를 보장하지 못한다(docs/외부예약_설정안내.md 참고).
   # 아래 schedule은 외부 예약이 멈췄을 때를 대비한 1시간 간격 예비 실행이다.
   schedule:
