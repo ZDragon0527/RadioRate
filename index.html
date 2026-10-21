@@ -438,8 +438,10 @@
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-300 border border-sky-400/30">
               알기 쉬운 방사선 비교
             </span>
-            <h3 class="text-xl sm:text-2xl font-extrabold tracking-tight">
-              "지금 발전소 주변 방사선량, 우리 일상생활과 비교하면 어느 정도일까요?"
+            <h3 class="text-lg sm:text-2xl font-extrabold tracking-tight leading-snug">
+              <!-- 모바일: 2줄로 줄인 문구 / 태블릿·PC: 기존 문구 -->
+              <span class="sm:hidden">"지금 발전소 주변 방사선량,<br />일상생활과 비교하면?"</span>
+              <span class="hidden sm:inline">"지금 발전소 주변 방사선량, 우리 일상생활과 비교하면 어느 정도일까요?"</span>
             </h3>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
               방사선은 공기·토양·음식물·우주 등 자연 어디에나 존재합니다. 현재 측정된 <strong id="commSelectedTargetName" class="text-sky-300 underline decoration-sky-400/60 underline-offset-4">월성원자력본부 평균</strong> 측정값(<strong id="commSelectedRateText" class="text-white">-</strong>)을 일상 속 친숙한 활동과 직접 비교해 보세요.
@@ -448,9 +450,13 @@
 
           <!-- Interactive Exposure Duration Selector -->
           <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 min-w-[280px] sm:min-w-[340px]">
-            <div class="flex items-center justify-between text-xs text-sky-200 mb-2">
-              <span class="font-semibold">기간별 누적 선량 시뮬레이터</span>
-              <span id="simSelectedStationBadge" class="px-2 py-0.5 rounded bg-sky-500/30 text-white font-bold">월성본부 평균</span>
+            <div class="flex items-center justify-between gap-2 text-xs text-sky-200 mb-2">
+              <span class="font-semibold whitespace-nowrap">기간별 누적 선량 시뮬레이터</span>
+              <!-- 모바일은 짧은 이름(예: 월성본부 평균)으로 한 줄 유지 -->
+              <span class="min-w-0 px-2 py-0.5 rounded bg-sky-500/30 text-white font-bold truncate">
+                <span id="simSelectedStationBadgeShort" class="sm:hidden">월성본부 평균</span>
+                <span id="simSelectedStationBadge" class="hidden sm:inline">월성본부 평균</span>
+              </span>
             </div>
 
             <div class="grid grid-cols-4 gap-1.5 mb-3" id="durationButtonsContainer">
@@ -1518,6 +1524,9 @@
       document.getElementById('commSelectedTargetName').textContent = activeTarget.label;
       document.getElementById('commSelectedRateText').textContent = rateText;
       document.getElementById('simSelectedStationBadge').textContent = activeTarget.label;
+      document.getElementById('simSelectedStationBadgeShort').textContent = state.selectedStationForComm
+        ? state.selectedStationForComm.expl
+        : state.selectedPlant === 'ALL' ? '전 본부 평균' : `${PLANT_INFO[state.selectedPlant].shortName} 평균`;
       document.getElementById('compSectionSubTitle').textContent = `${activeTarget.label} (${rateText})`;
 
       // Duration simulator calculation
