@@ -172,7 +172,7 @@
     <div id="dataStatusBanner" role="status" class="hidden rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-xs sm:text-sm font-medium px-4 py-3"></div>
 
     <!-- Hero Banner: Selected Plant Status & Safety Assurance Summary -->
-    <section class="relative rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-900">
+    <section id="heroSection" class="relative rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-900">
       <img src="assets/hero.jpg" alt="원자력발전소 주변 청정 환경 모니터링" class="absolute inset-0 w-full h-full object-cover opacity-35 max-w-full" />
       <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/80 to-slate-900/55"></div>
 
@@ -227,28 +227,8 @@
       </div>
     </section>
 
-    <!-- 4 Key KPI Summary Cards -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- Card 1: Current Average -->
-      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/90 flex flex-col justify-between">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">선택 지역 평균 선량률</span>
-          <span class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </span>
-        </div>
-        <div class="mt-3">
-          <div class="flex items-baseline gap-1.5">
-            <span id="kpiAvgRate" class="text-2xl sm:text-3xl font-extrabold text-slate-900">-</span>
-            <span class="text-xs font-semibold text-slate-500">μSv/h</span>
-          </div>
-          <p id="kpiStationCountText" class="text-xs text-slate-500 mt-1">측정소 산술평균</p>
-          <p id="kpiMeasuredAt" class="text-[11px] text-slate-400 mt-0.5">측정 기준 시각: -</p>
-        </div>
-      </div>
-
+    <!-- Key KPI Summary Cards -->
+    <section id="kpiSection" class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- Card 2: Min / Max Station -->
       <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/90 flex flex-col justify-between">
         <div class="flex items-center justify-between">
@@ -312,24 +292,30 @@
 
       <!-- All 5 Plants Summary Comparison Bar (Always visible when ALL or for quick comparison across headquarters) -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 sm:mb-4">
           <div>
             <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
               <span class="w-2 h-5 rounded-full bg-sky-600"></span>
-              5개 원자력본부 주변 방사선량 비교 (클릭 시 해당 본부로 전환)
+              5개 원자력본부 주변 방사선량 비교<span class="hidden sm:inline"> (클릭 시 해당 본부로 전환)</span>
             </h3>
-            <p class="text-xs text-slate-500 mt-0.5">
+            <p class="hidden sm:block text-xs text-slate-500 mt-0.5">
               월성본부를 기본으로 고리·새울·한빛·한울본부 및 5개 본부 통합 현황을 즉시 전환하여 비교할 수 있습니다.
             </p>
           </div>
-          <div class="flex items-center gap-2 text-xs">
+          <div class="hidden sm:flex items-center gap-2 text-xs">
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 평시 정상 (0.05 ~ 0.30 μSv/h)
             </span>
           </div>
         </div>
 
-        <div id="plantSummaryCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <!-- Mobile-only compact list (본부명 + 평균값) -->
+        <div id="plantSummaryCompact" class="sm:hidden divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+          <!-- Dynamically populated by JS -->
+        </div>
+
+        <!-- Tablet/Desktop cards (sm+) -->
+        <div id="plantSummaryCardsGrid" class="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <!-- Dynamically populated by JS -->
         </div>
       </section>
@@ -1081,13 +1067,11 @@
         heroStatus.textContent = '-';
         heroStatus.className = 'px-2 py-0.5 rounded bg-slate-500/20 text-slate-300 font-semibold border border-slate-500/30';
         document.getElementById('heroPlantDesc').textContent = plantMeta.desc;
-        ['heroAvgValue', 'kpiAvgRate', 'kpiMinMaxRate', 'kpiXrayRatio', 'kpiAnnualEquiv'].forEach(id => {
+        ['heroAvgValue', 'kpiMinMaxRate', 'kpiXrayRatio', 'kpiAnnualEquiv'].forEach(id => {
           document.getElementById(id).textContent = '-';
         });
-        document.getElementById('kpiStationCountText').textContent = '측정 데이터 없음';
         document.getElementById('heroMeasuredAt').textContent = '측정 기준 시각: -';
         renderCollectedAt();
-        document.getElementById('kpiMeasuredAt').textContent = '측정 기준 시각: -';
         document.getElementById('kpiMinMaxLocation').textContent = '-';
         document.getElementById('heroSpectrumMarker').style.left = '0%';
         return;
@@ -1116,12 +1100,9 @@
       document.getElementById('heroSpectrumMarker').style.left = `${ratio.toFixed(1)}%`;
 
       // KPIs
-      document.getElementById('kpiAvgRate').textContent = stats.avg.toFixed(3);
-      document.getElementById('kpiStationCountText').textContent = `측정소 ${stats.count}개소 산술평균`;
       const measuredAt = `측정 기준 시각: ${measuredTimeLabel(stations)}`;
       document.getElementById('heroMeasuredAt').textContent = measuredAt;
       renderCollectedAt();
-      document.getElementById('kpiMeasuredAt').textContent = measuredAt;
       document.getElementById('kpiMinMaxRate').textContent = `${stats.min.toFixed(3)} ~ ${stats.max.toFixed(3)}`;
       document.getElementById('kpiMinMaxLocation').textContent = `최저: ${stats.minStation} / 최고: ${stats.maxStation}`;
 
@@ -1133,6 +1114,7 @@
     }
 
     function renderFivePlantSummaryCards() {
+      renderPlantSummaryCompact();
       const container = document.getElementById('plantSummaryCardsGrid');
       if (!container) return;
 
@@ -1178,6 +1160,33 @@
       container.querySelectorAll('.plant-summary-card').forEach(card => {
         card.addEventListener('click', () => {
           state.selectedPlant = card.getAttribute('data-select-plant');
+          state.selectedStationForComm = null;
+          renderAllSections();
+        });
+      });
+    }
+
+    // 모바일 전용: 본부명과 평균값만 한 줄씩 표시(탭하면 해당 본부로 전환)
+    function renderPlantSummaryCompact() {
+      const list = document.getElementById('plantSummaryCompact');
+      if (!list) return;
+      list.innerHTML = PLANT_CODES.map(code => {
+        const stats = computeStats(state.plantData[code] || []);
+        const isSelected = state.selectedPlant === code;
+        const dot = !stats ? 'bg-slate-300' : stats.overCount === 0 ? 'bg-emerald-500' : 'bg-amber-500';
+        const name = PLANT_INFO[code].shortName.replace('본부', '');
+        return `
+          <button type="button" data-select-plant="${code}" class="plant-compact-row w-full flex items-center justify-between px-3.5 py-2.5 text-left ${isSelected ? 'bg-sky-50' : 'bg-white'}">
+            <span class="flex items-center gap-2 text-sm font-bold ${isSelected ? 'text-sky-700' : 'text-slate-800'}">
+              <span class="w-2 h-2 rounded-full ${dot}"></span>${name}
+            </span>
+            <span class="text-sm font-extrabold ${isSelected ? 'text-sky-700' : 'text-slate-900'}">${stats ? stats.avg.toFixed(3) : '-'} <span class="text-[11px] font-medium text-slate-500">μSv/h</span></span>
+          </button>
+        `;
+      }).join('');
+      list.querySelectorAll('.plant-compact-row').forEach(row => {
+        row.addEventListener('click', () => {
+          state.selectedPlant = row.getAttribute('data-select-plant');
           state.selectedStationForComm = null;
           renderAllSections();
         });
@@ -1696,6 +1705,9 @@
           const secComm = document.getElementById('sectionCommunication');
           secMon.classList.toggle('hidden', state.viewMode === 'communication');
           secComm.classList.toggle('hidden', state.viewMode === 'dashboard');
+          // '일상 방사선 비교' 탭에서는 '알기 쉬운 방사선 비교' 카드 위쪽(상단 배너·KPI)을 숨긴다
+          document.getElementById('heroSection').classList.toggle('hidden', state.viewMode === 'communication');
+          document.getElementById('kpiSection').classList.toggle('hidden', state.viewMode === 'communication');
           renderCharts();
         });
       });
