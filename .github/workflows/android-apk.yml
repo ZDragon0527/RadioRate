@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write   # GitHub Releases에 APK 업로드
+  actions: write    # 게시 후 사이트 재배포(다운로드 버튼 정보 갱신) 실행
 
 concurrency:
   group: android-apk
@@ -103,3 +104,10 @@ jobs:
             --title "안드로이드 앱 1.0.${{ github.run_number }}" \
             --notes "원전 방사선량 안드로이드 앱. radiorate.apk를 내려받아 설치하세요. 처음 설치할 때 '출처를 알 수 없는 앱 설치' 허용이 필요할 수 있습니다." \
             --latest
+
+      - name: 사이트 재배포 요청 (다운로드 버튼 정보 갱신)
+        if: steps.keystore.outputs.present == 'true'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run update-radiation.yml --repo "${{ github.repository }}" --ref main

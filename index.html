@@ -453,7 +453,7 @@
               "지금 발전소 주변 방사선량, 우리 일상생활과 비교하면 어느 정도일까요?"
             </h3>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              방사선은 공기·토양·음식물·우주 등 자연 어디에나 존재합니다. 현재 측정된 <strong id="commSelectedTargetName" class="text-sky-300 underline decoration-sky-400/60 underline-offset-4">월성원자력본부 평균</strong> 실시간 측정값(<strong id="commSelectedRateText" class="text-white">-</strong>)을 일상 속 친숙한 활동과 직접 비교해 보세요.
+              방사선은 공기·토양·음식물·우주 등 자연 어디에나 존재합니다. 현재 측정된 <strong id="commSelectedTargetName" class="text-sky-300 underline decoration-sky-400/60 underline-offset-4">월성원자력본부 평균</strong> 측정값(<strong id="commSelectedRateText" class="text-white">-</strong>)을 일상 속 친숙한 활동과 직접 비교해 보세요.
             </p>
           </div>
 
@@ -1754,18 +1754,19 @@
     });
 
     // 최신 릴리스에 APK가 있을 때만 다운로드 버튼을 보인다(없으면 404 링크를 노출하지 않음)
+    // app-release.json은 사이트 배포 때 GitHub Actions가 만든다(방문자가 GitHub API를 직접 호출하지 않음)
     async function showApkDownloadIfAvailable() {
       const box = document.getElementById('apkDownloadBox');
       if (!box) return;
       try {
-        const res = await fetch('https://api.github.com/repos/ZDragon0527/RadioRate/releases/latest', { headers: { Accept: 'application/vnd.github+json' } });
+        const res = await fetch(`app-release.json?_=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const release = await res.json();
-        const asset = (release.assets || []).find(a => a.name === 'radiorate.apk');
-        if (!asset) return;
-        document.getElementById('apkDownloadLink').href = asset.browser_download_url;
+        const asset = release.apk;
+        if (!asset || !asset.url) return;
+        document.getElementById('apkDownloadLink').href = asset.url;
         const sizeMb = (asset.size / 1024 / 1024).toFixed(1);
-        const version = String(release.tag_name || '').replace(/^android-v/, '');
+        const version = String(release.version || '');
         document.getElementById('apkDownloadText').textContent = `안드로이드 앱 내려받기${version ? ` (v${version}, ${sizeMb}MB)` : ''}`;
         box.classList.remove('hidden');
       } catch (e) {
