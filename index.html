@@ -310,7 +310,7 @@
         </div>
 
         <!-- Mobile-only compact list (본부명 + 평균값) -->
-        <div id="plantSummaryCompact" class="sm:hidden divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+        <div id="plantSummaryCompact" class="sm:hidden grid grid-cols-3 gap-2">
           <!-- Dynamically populated by JS -->
         </div>
 
@@ -1166,21 +1166,29 @@
       });
     }
 
-    // 모바일 전용: 본부명과 평균값만 한 줄씩 표시(탭하면 해당 본부로 전환)
+    // 모바일 전용: 5개 본부 + 전 본부 평균을 3칸×2줄로 간략 표시(탭하면 해당 본부로 전환)
     function renderPlantSummaryCompact() {
       const list = document.getElementById('plantSummaryCompact');
       if (!list) return;
-      list.innerHTML = PLANT_CODES.map(code => {
-        const stats = computeStats(state.plantData[code] || []);
+      const items = PLANT_CODES.map(code => ({
+        code,
+        name: PLANT_INFO[code].shortName.replace('본부', ''),
+        stats: computeStats(state.plantData[code] || [])
+      }));
+      // 전 본부 평균은 '전체 5개 본부 통합' 화면과 같은 방식(전체 측정소 산술평균)으로 계산
+      items.push({ code: 'ALL', name: '전 본부', stats: computeStats(PLANT_CODES.flatMap(c => state.plantData[c] || [])) });
+
+      list.innerHTML = items.map(({ code, name, stats }) => {
         const isSelected = state.selectedPlant === code;
         const dot = !stats ? 'bg-slate-300' : stats.overCount === 0 ? 'bg-emerald-500' : 'bg-amber-500';
-        const name = PLANT_INFO[code].shortName.replace('본부', '');
+        const box = isSelected ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white';
         return `
-          <button type="button" data-select-plant="${code}" class="plant-compact-row w-full flex items-center justify-between px-3.5 py-2.5 text-left ${isSelected ? 'bg-sky-50' : 'bg-white'}">
-            <span class="flex items-center gap-2 text-sm font-bold ${isSelected ? 'text-sky-700' : 'text-slate-800'}">
-              <span class="w-2 h-2 rounded-full ${dot}"></span>${name}
+          <button type="button" data-select-plant="${code}" class="plant-compact-row rounded-xl border ${box} px-2 py-2 text-center">
+            <span class="flex items-center justify-center gap-1 text-xs font-bold ${isSelected ? 'text-sky-700' : 'text-slate-700'}">
+              <span class="w-1.5 h-1.5 rounded-full ${dot}"></span>${name}
             </span>
-            <span class="text-sm font-extrabold ${isSelected ? 'text-sky-700' : 'text-slate-900'}">${stats ? stats.avg.toFixed(3) : '-'} <span class="text-[11px] font-medium text-slate-500">μSv/h</span></span>
+            <span class="block mt-0.5 text-base font-extrabold leading-tight ${isSelected ? 'text-sky-700' : 'text-slate-900'}">${stats ? stats.avg.toFixed(3) : '-'}</span>
+            <span class="block text-[10px] font-medium text-slate-500">μSv/h</span>
           </button>
         `;
       }).join('');
