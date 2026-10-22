@@ -479,25 +479,26 @@
           <p>※ 환경방사선감시기는 몸 밖에서 들어오는 감마선(외부피폭)만 측정합니다. 국민 연간 자연방사선량에는 라돈 흡입·음식물 섭취 등 몸 안에서 받는 선량(내부피폭)이 포함되어 있어 비교 범위가 다릅니다.</p>
         </div>
 
-        <!-- 현재 측정값 한 줄 요약 -->
-        <div class="mt-4 bg-white/10 rounded-2xl p-4 sm:p-5 border border-white/15">
-          <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
-            <svg class="w-4 h-4 text-sky-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </section>
+
+      <!-- 현재 측정값 한 줄 요약 (별도 기본 카드) -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5 sm:p-6">
+        <h4 class="text-sm sm:text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>현재 측정값 한 줄 요약</span>
+        </h4>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200/90">
+          <p id="paBriefingSummaryText" class="text-xs sm:text-sm text-slate-700 leading-relaxed">
+            측정 데이터를 불러오면 요약이 표시됩니다.
+          </p>
+          <button id="btnCopyBriefingText" type="button" class="shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
-            <span>현재 측정값 한 줄 요약</span>
-          </h4>
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-950/50 p-4 rounded-xl border border-white/10">
-            <p id="paBriefingSummaryText" class="text-xs sm:text-sm text-slate-100 leading-relaxed">
-              측정 데이터를 불러오면 요약이 표시됩니다.
-            </p>
-            <button id="btnCopyBriefingText" type="button" class="shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-400/30 transition">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <span>요약 복사</span>
-            </button>
-          </div>
+            <span>요약 복사</span>
+          </button>
         </div>
       </section>
 
@@ -1518,24 +1519,24 @@
         }
 
         return `
-          <div class="rounded-xl border border-white/10 p-4 bg-white/5 hover:bg-white/10 transition flex flex-col justify-between">
+          <div class="rounded-xl border border-slate-200 p-4 bg-white text-slate-900 shadow-sm flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between gap-2 mb-2">
                 <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${bm.badgeColor}">
                   ${bm.category}
                 </span>
-                <span class="text-xs font-extrabold text-white">${doseLabel}</span>
+                <span class="text-xs font-extrabold text-slate-900">${doseLabel}</span>
               </div>
-              <h4 class="text-sm font-bold text-white">${bm.title}</h4>
-              <p class="text-xs text-slate-300 mt-1 leading-relaxed">${desc}</p>
+              <h4 class="text-sm font-bold text-slate-900">${bm.title}</h4>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">${desc}</p>
             </div>
 
-            <div class="mt-4 pt-3 border-t border-white/10">
+            <div class="mt-4 pt-3 border-t border-slate-200/80">
               <div class="flex items-center justify-between gap-2 text-xs">
-                <span class="text-slate-300 font-medium">${compareLabel}</span>
-                <span class="font-extrabold text-sky-300 text-right whitespace-nowrap">${multipleText}</span>
+                <span class="text-slate-500 font-medium">${compareLabel}</span>
+                <span class="font-extrabold text-sky-700 text-right whitespace-nowrap">${multipleText}</span>
               </div>
-              <p class="text-[10px] text-slate-400 mt-2 leading-snug">${bm.sourceUrl ? `<a href="${bm.sourceUrl}" target="_blank" rel="noopener noreferrer" class="underline decoration-slate-500 hover:text-slate-200">${bm.source}</a>` : bm.source}</p>
+              <p class="text-[10px] text-slate-400 mt-2 leading-snug">${bm.sourceUrl ? `<a href="${bm.sourceUrl}" target="_blank" rel="noopener noreferrer" class="underline decoration-slate-300 hover:text-slate-600">${bm.source}</a>` : bm.source}</p>
             </div>
           </div>
         `;
