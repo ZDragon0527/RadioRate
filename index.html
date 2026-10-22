@@ -1555,12 +1555,12 @@
         mobileSelectGrid.innerHTML = EVERYDAY_BENCHMARKS.map(bm => {
           const isSelected = state.selectedBenchmarkId === bm.id;
           const btnStyle = isSelected
-            ? 'bg-sky-500 text-white border-sky-500 shadow-sm'
-            : 'bg-white/5 text-slate-100 border-white/15 hover:bg-white/10';
+            ? 'bg-sky-50 text-sky-800 border-sky-500 ring-1 ring-sky-500 shadow-sm'
+            : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-50';
           return `
             <button type="button" data-benchmark-id="${bm.id}" class="mobile-benchmark-btn text-left px-3 py-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-between gap-1.5 ${btnStyle}">
               <span class="truncate">${bm.title}</span>
-              <svg class="w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-white rotate-180' : 'text-slate-400'} transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-sky-600 rotate-180' : 'text-slate-400'} transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
