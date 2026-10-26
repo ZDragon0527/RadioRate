@@ -1,0 +1,26 @@
+name: 방사선량 수집 회귀 테스트
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/*radiation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/*radiation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/fetch-radiation.test.mjs
+      - run: bash -n scripts/diagnose-api-network.sh

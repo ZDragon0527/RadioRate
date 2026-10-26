@@ -60,17 +60,44 @@ jobs:
         id: collect
         env:
           RADIORATE_SERVICE_KEY: ${{ secrets.RADIORATE_SERVICE_KEY }}
-        run: node scripts/fetch-radiation.mjs --prev prev.json --out _site/data/radiation.json || echo "failed=true" >> "$GITHUB_OUTPUT"
+        # Only exit 2 means a valid fallback JSON was written after all plants failed.
+        # Unexpected errors (including output-file errors) must stop deployment.
+        run: |
+          status=0
+          node scripts/fetch-radiation.mjs --prev prev.json --out _site/data/radiation.json || status=$?
+          case "$status" in
+            0) echo "result=success" >> "$GITHUB_OUTPUT" ;;
+            2) echo "result=all_failed" >> "$GITHUB_OUTPUT" ;;
+            *) echo "result=fatal" >> "$GITHUB_OUTPUT"; exit "$status" ;;
+          esac
+
+      - name: API 네트워크 진단
+        id: diagnostics
+        if: ${{ always() && (steps.collect.outputs.failed_count > 0 || steps.collect.outcome == 'failure') }}
+        continue-on-error: true
+        timeout-minutes: 1
+        run: bash scripts/diagnose-api-network.sh
 
       - uses: actions/upload-pages-artifact@v3
+        if: ${{ success() && (steps.collect.outputs.result == 'success' || steps.collect.outputs.result == 'all_failed') }}
         with:
           path: _site
 
       - id: deployment
+        if: ${{ success() && (steps.collect.outputs.result == 'success' || steps.collect.outputs.result == 'all_failed') }}
         uses: actions/deploy-pages@v4
 
+      - name: 수집 및 배포 결과 요약
+        if: always()
+        env:
+          COLLECTION_RESULT: ${{ steps.collect.outputs.result }}
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          DEPLOYMENT_OUTCOME: ${{ steps.deployment.outcome }}
+          DIAGNOSTICS_OUTCOME: ${{ steps.diagnostics.outcome }}
+        run: node scripts/summarize-radiation.mjs _site/data/radiation.json
+
       - name: 수집 실패 알림
-        if: steps.collect.outputs.failed == 'true'
+        if: ${{ always() && steps.collect.outputs.result == 'all_failed' }}
         run: |
-          echo "::error::5개 본부 모두 데이터 수집에 실패했습니다. 위 '공공데이터포털 API 수집' 단계 로그를 확인하세요. (직전 값으로 배포됨)"
+          echo "::error::5개 본부 모두 데이터 수집에 실패했습니다. API 수집 로그와 결과 요약에서 실패 사유·직전 값 보존 여부·Pages 배포 결과를 확인하세요."
           exit 1
