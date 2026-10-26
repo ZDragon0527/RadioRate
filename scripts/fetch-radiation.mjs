@@ -7,13 +7,21 @@
 //            24시간 추이(history)를 이어 붙이는 데 쓴다.
 //  - --sample-dir: 테스트용. <dir>/<genName>.xml 파일을 API 응답 대신 읽는다.
 
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 const PLANT_CODES = ['WS', 'KR', 'SU', 'YK', 'UJ'];
 const DEFAULT_ENDPOINT = 'https://apis.data.go.kr/B552041/radiorate/getradiorate';
 const HISTORY_WINDOW_MS = 24 * 60 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 20000;
+const MAX_ATTEMPTS = 3;
+const MAX_RETRY_DELAY_MS = 10000;
+const TRANSIENT_CODES = new Set([
+  'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT',
+  'UND_ERR_SOCKET', 'ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'EAI_AGAIN'
+]);
 
 function parseArgs(argv) {
   const args = {};
@@ -111,15 +119,65 @@ function buildUrl(endpoint, serviceKey, genName) {
   return url.toString();
 }
 
-async function fetchPlantXml(code, { endpoint, serviceKey, sampleDir }) {
+function errorChain(err, seen = new Set()) {
+  if (!err || typeof err !== 'object' || seen.has(err) || seen.size >= 20) return [];
+  seen.add(err);
+  return [err, ...errorChain(err.cause, seen),
+    ...(Array.isArray(err.errors) ? err.errors.flatMap(e => errorChain(e, seen)) : [])];
+}
+
+export function formatError(err, serviceKey) {
+  const details = errorChain(err).map(e =>
+    [e.name, e.code, e.message].filter(Boolean).join(': ')).join(' <- ');
+  return redactKey(details || String(err), serviceKey).replace(/[\r\n\t]/g, ' ').slice(0, 2000);
+}
+
+export function retryAfterMs(value, now = Date.now()) {
+  if (value == null || value.trim() === '') return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+  const date = Date.parse(value);
+  return Number.isFinite(date) ? Math.max(0, date - now) : null;
+}
+
+function isRetryable(err) {
+  if (err.status != null) return err.status === 429 || err.status >= 500 && err.status <= 599;
+  const chain = errorChain(err);
+  return chain.some(e => TRANSIENT_CODES.has(e.code) || e.name === 'TimeoutError') ||
+    // Some runtimes omit the cause. When supplied, retry only known transient causes.
+    (err.message === 'fetch failed' && !err.cause);
+}
+
+export async function fetchPlantXml(code, { endpoint, serviceKey, sampleDir }, {
+  fetchImpl = fetch, sleepImpl = sleep, log = console.warn,
+  timeoutMs = REQUEST_TIMEOUT_MS, random = Math.random
+} = {}) {
   if (sampleDir) return readFile(path.join(sampleDir, `${code}.xml`), 'utf8');
-  if (!serviceKey) throw new Error('인증키(RADIORATE_SERVICE_KEY)가 설정되지 않았습니다.');
-  const res = await fetch(buildUrl(endpoint, serviceKey, code), {
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${text.slice(0, 200)}`);
-  return text;
+  if (!serviceKey?.trim()) throw new Error('인증키(RADIORATE_SERVICE_KEY)가 설정되지 않았습니다.');
+  const url = buildUrl(endpoint, serviceKey, code);
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const started = Date.now();
+    try {
+      const res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
+      if (!res.ok) {
+        const err = new Error(`HTTP ${res.status}`);
+        err.status = res.status;
+        err.retryAfterMs = retryAfterMs(res.headers.get('retry-after'));
+        // Do not log response bodies, which may echo credentials. Release the connection.
+        await res.body?.cancel();
+        throw err;
+      }
+      return await res.text();
+    } catch (err) {
+      const delay = err.retryAfterMs ?? (1000 * 2 ** (attempt - 1) + Math.floor(random() * 250));
+      // A long Retry-After is not shortened: stop and let the next scheduled run try.
+      const retry = attempt < MAX_ATTEMPTS && isRetryable(err) && delay <= MAX_RETRY_DELAY_MS;
+      log(`[${code}] 요청 ${attempt}/${MAX_ATTEMPTS}, ${Date.now() - started}ms: ${formatError(err, serviceKey)}` +
+        (retry ? `; ${delay}ms 후 재시도` : '; 재시도 종료'));
+      if (!retry) throw err;
+      await sleepImpl(delay);
+    }
+  }
 }
 
 async function readJson(file) {
@@ -135,13 +193,23 @@ async function readJson(file) {
 function redactKey(message, serviceKey) {
   let out = String(message || '');
   const key = (serviceKey || '').trim();
-  if (!key) return out;
   const variants = new Set([key, encodeURIComponent(key)]);
-  try { variants.add(decodeURIComponent(key)); } catch { /* ignore */ }
+  try {
+    const decoded = decodeURIComponent(key);
+    variants.add(decoded);
+    variants.add(encodeURIComponent(decoded));
+    variants.add(new URLSearchParams({ k: decoded }).toString().slice(2));
+  } catch { /* ignore */ }
   for (const v of variants) {
     if (v) out = out.split(v).join('***');
   }
-  return out;
+  // Remove entire URL queries even when the endpoint or an error adds other parameters.
+  return out.replace(/https?:\/\/[^\s<>"']+/gi, value => {
+    try {
+      const url = new URL(value);
+      return `${url.protocol}//${url.host}${url.pathname}${url.search ? '?[redacted]' : ''}`;
+    } catch { return '[URL redacted]'; }
+  });
 }
 
 function average(stations) {
@@ -168,10 +236,10 @@ async function main() {
       plants[code] = { ok: true, stale: false, lastSuccessAt: fetchedAt, stations, warnings };
       okCount++;
       console.log(`[${code}] ${stations.length}개 측정소 수신`);
-      warnings.forEach(w => console.warn(`[${code}] 경고: ${w}`));
+      warnings.forEach(w => console.warn(`[${code}] 경고: ${redactKey(w, serviceKey)}`));
     } catch (err) {
       // 실패 시 직전 수신값을 유지하되 stale로 표시한다. 직전 값도 없으면 빈 목록.
-      const message = redactKey(err.message, serviceKey);
+      const message = formatError(err, serviceKey);
       plants[code] = {
         ok: false,
         stale: Boolean(prevPlant?.stations?.length),
@@ -200,13 +268,22 @@ async function main() {
     history
   };
   await mkdir(path.dirname(out), { recursive: true });
-  await writeFile(out, JSON.stringify(result, null, 2));
+  await writeFile(out, JSON.stringify(result,
+    (_, value) => typeof value === 'string' ? redactKey(value, serviceKey) : value, 2));
   console.log(`저장: ${out} (성공 ${okCount}/${PLANT_CODES.length})`);
+
+  if (process.env.GITHUB_OUTPUT) {
+    await appendFile(process.env.GITHUB_OUTPUT,
+      `ok_count=${okCount}\nfailed_count=${PLANT_CODES.length - okCount}\n`);
+  }
 
   // 전 본부 실패면 워크플로를 실패로 표시해 알림을 받게 한다(배포는 직전 값으로 계속 진행).
   if (okCount === 0) process.exitCode = 2;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch(err => {
+    console.error(`수집 처리 오류: ${formatError(err, process.env.RADIORATE_SERVICE_KEY)}`);
+    process.exitCode = 1;
+  });
 }
