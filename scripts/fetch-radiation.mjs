@@ -235,7 +235,9 @@ async function main() {
       const { stations, warnings } = parseResponse(xml);
       plants[code] = { ok: true, stale: false, lastSuccessAt: fetchedAt, stations, warnings };
       okCount++;
-      console.log(`[${code}] ${stations.length}개 측정소 수신`);
+      // 수집이 성공해도 API가 옛 측정값을 돌려줄 수 있어, 가장 최근 측정 시각을 함께 남긴다.
+      const latest = stations.map(s => s.time).filter(Boolean).sort().at(-1) || '없음';
+      console.log(`[${code}] ${stations.length}개 측정소 수신 (최신 측정 시각 ${latest})`);
       warnings.forEach(w => console.warn(`[${code}] 경고: ${redactKey(w, serviceKey)}`));
     } catch (err) {
       // 실패 시 직전 수신값을 유지하되 stale로 표시한다. 직전 값도 없으면 빈 목록.

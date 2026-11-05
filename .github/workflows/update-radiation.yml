@@ -37,7 +37,8 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: 직전 배포본 데이터 가져오기
-        run: curl -fsSL --max-time 20 "${{ steps.pages.outputs.base_url }}/data/radiation.json" -o prev.json || echo '{}' > prev.json
+        # CDN 캐시(최대 10분)를 피하려고 매번 다른 쿼리를 붙인다. 캐시된 옛 파일을 받으면 24시간 추이가 끊긴다.
+        run: curl -fsSL --max-time 20 "${{ steps.pages.outputs.base_url }}/data/radiation.json?_=$(date +%s)" -o prev.json || echo '{}' > prev.json
 
       - name: 사이트 구성
         run: |
@@ -86,6 +87,27 @@ jobs:
       - id: deployment
         if: ${{ success() && (steps.collect.outputs.result == 'success' || steps.collect.outputs.result == 'all_failed') }}
         uses: actions/deploy-pages@v4
+
+      - name: 배포 반영 확인
+        # Pages가 배포를 '성공'으로 받고도 사이트에 반영하지 않은 사례(2026-11-05)가 있어,
+        # 공개 사이트의 데이터가 이번 수집본으로 바뀌었는지 직접 확인한다. 최대 약 3분 기다린다.
+        id: verify
+        if: ${{ success() && steps.deployment.outcome == 'success' }}
+        env:
+          LIVE_URL: ${{ steps.deployment.outputs.page_url }}data/radiation.json
+        run: |
+          expected=$(jq -r '.fetchedAt' _site/data/radiation.json)
+          live=''
+          for i in $(seq 1 12); do
+            live=$(curl -fsSL --max-time 20 "$LIVE_URL?_=$(date +%s%N)" | jq -r '.fetchedAt' 2>/dev/null || true)
+            if [ "$live" = "$expected" ]; then
+              echo "사이트 반영 확인: $live (${i}번째 확인)"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::배포는 성공했지만 사이트에 반영되지 않았습니다. 사이트 데이터 수집 시각: ${live:-읽기 실패}, 이번 수집 시각: $expected. 저장소 Settings → Pages와 githubstatus.com을 확인하세요."
+          exit 1
 
       - name: 수집 및 배포 결과 요약
         if: always()
