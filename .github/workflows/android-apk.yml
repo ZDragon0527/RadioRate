@@ -110,4 +110,4 @@ jobs:
         working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run update-radiation.yml --repo "${{ github.repository }}" --ref main
+        run: gh workflow run update-radiation.yml --repo "${{ github.repository }}" --ref main -f deploy_site=true

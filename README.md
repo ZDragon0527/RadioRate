@@ -6,12 +6,12 @@
 ## 동작 방식
 
 ```
-외부 예약 서비스(약 10분 간격) ─ workflow_dispatch 호출 ─→ GitHub Actions
+외부 예약 서비스(약 10분 간격) ─ workflow_dispatch 호출 ─→ GitHub Actions (collect 작업)
   (예비: GitHub 자체 예약 1시간 간격)
   └ scripts/fetch-radiation.mjs ── 공공데이터포털 API 호출(인증키: Secrets)
-       └ data/radiation.json 생성 ─┐
-  index.html · assets ─────────────┴→ GitHub Pages 배포
-방문자 브라우저 → index.html → data/radiation.json 읽기(5분마다 재확인)
+       └ radiation.json ─→ 저장소 `data` 브랜치에 덮어쓰기(커밋 1개 유지)
+main에 push(화면 코드 변경) ─→ deploy-site 작업 ─→ index.html · assets를 GitHub Pages에 배포
+방문자 브라우저 → index.html(Pages) → raw.githubusercontent.com/…/data/radiation.json 읽기(5분마다 재확인)
 ```
 
 - 측정값은 **수집된 실측 데이터만** 표시합니다. 시뮬레이션·예시 값은 표시하지 않습니다.
@@ -36,7 +36,7 @@
 - **재시도**: 일시적인 연결 오류·요청 시간 초과·HTTP 429/5xx는 본부당 최대 3회 시도합니다. 요청 제한은 회당 20초이며 재시도 대기는 약 1초·2초(소량의 무작위 지연 추가)입니다. `Retry-After`는 초 또는 HTTP 날짜로 해석하며, 10초를 초과하면 짧게 줄여 재시도하지 않고 다음 예약 실행에 맡깁니다. 인증·XML 오류는 반복 호출하지 않습니다.
 - **실패 원인 확인**: 수집 로그에 시도 횟수·소요 시간·중첩 오류 코드가 남습니다. 본부 수집 실패 또는 수집 단계 오류가 있으면 같은 러너에서 인증키 없이 DNS·IPv4·IPv6 연결을 진단합니다. 진단의 HTTP 응답은 인증이나 측정값 검증 결과가 아닙니다. 인증키와 URL 쿼리, HTTP 오류 응답 본문은 로그에 노출하지 않습니다.
 - **결과 요약**: Actions 실행의 Summary에서 수집 성공 수, 본부별 마지막 성공 시각(UTC), 직전 값 보존 여부·실패 사유와 Pages 배포 결과를 확인합니다. 전 본부 실패는 직전 값(없으면 빈 목록)을 담은 JSON을 배포한 뒤 실패 알림을 냅니다. 파일 생성 등 예상 밖의 오류는 배포를 중단합니다.
-- **사이트 반영 멈춤**: 배포는 성공인데 사이트가 바뀌지 않으면 '배포 반영 확인' 단계가 실패로 알립니다(2026-11 발생). 새 커밋을 올리면 다시 반영되는 사례가 있었습니다.
+- **측정 데이터와 사이트 배포 분리(2026-11)**: 같은 커밋으로 10분마다 Pages를 다시 배포하면 '성공'으로 끝나도 사이트에 반영되지 않는 일이 반복돼, 측정 데이터는 `data` 브랜치에 올리고 웹·앱이 raw 주소에서 읽도록 바꿨습니다. raw 주소는 CDN이 최대 5분 캐시합니다. 화면을 다시 배포하려면 main에 push하거나 Actions에서 `deploy_site`를 켜고 수동 실행합니다.
 - **예약 실행 중지**: 저장소에 일정 기간 활동이 없으면 GitHub가 예약 실행을 멈출 수 있습니다. Actions 탭에서 다시 켜면 됩니다.
 - **단위**: 응답 값(`value`)을 μSv/h로 보고 변환 없이 표시합니다(실제 응답 예: `0.093`). 원본 응답은 `data/radiation.json`의 `raw` 필드에 보존됩니다.
 
@@ -46,7 +46,7 @@
 | --- | --- |
 | `index.html` | 웹앱 본문 (Tailwind CSS·Chart.js CDN 사용) |
 | `scripts/fetch-radiation.mjs` | API 수집 스크립트 (Node 20+, 외부 패키지 없음) |
-| `.github/workflows/update-radiation.yml` | 수집 + Pages 배포 워크플로 |
+| `.github/workflows/update-radiation.yml` | 수집(→ `data` 브랜치) + 화면 Pages 배포 워크플로 |
 | `assets/hero.jpg`, `assets/icon*.svg/png` | 배너 이미지, 앱 아이콘 |
 | `manifest.webmanifest`, `sw.js` | 홈 화면 설치(PWA)용 매니페스트, 오프라인 지원 서비스 워커 |
 | `mobile/` | 안드로이드 앱(Capacitor). 공개 웹앱 주소를 여는 앱 |

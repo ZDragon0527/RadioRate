@@ -10,7 +10,7 @@ function cell(value) {
 export function renderSummary(data, { collectionResult, collectOutcome, deploymentOutcome, diagnosticsOutcome }) {
   const lines = ['## 방사선량 수집 및 배포', '',
     `- 수집 단계: ${cell(collectOutcome || 'skipped')}`,
-    `- Pages 배포: ${cell(deploymentOutcome || 'skipped')}`,
+    `- 데이터 게시: ${cell(deploymentOutcome || 'skipped')}`,
     `- 네트워크 진단: ${cell(diagnosticsOutcome || 'skipped')}`];
   if (!data || !['success', 'all_failed'].includes(collectionResult)) {
     lines.push('- 수집 결과 파일을 생성하지 못했거나 수집이 실행되지 않았습니다. 수집·선행 단계 로그를 확인하세요.');
@@ -26,7 +26,7 @@ export function renderSummary(data, { collectionResult, collectOutcome, deployme
       const status = p.ok ? '성공' : p.stale ? '실패 · 직전 값 유지' : '실패 · 보존할 값 없음';
       lines.push(`| ${cell(code)} | ${status} | ${p.stations.length} | ${cell(p.lastSuccessAt)} | ${cell(p.error || '—')} |`);
     }
-    if (ok === 0) lines.push('', '전 본부 수집 실패로 작업은 실패 처리됩니다. 배포 성공 여부는 위 Pages 배포 결과를 확인하세요.');
+    if (ok === 0) lines.push('', '전 본부 수집 실패로 작업은 실패 처리됩니다. 게시 여부는 위 데이터 게시 결과를 확인하세요.');
   }
   return lines.join('\n') + '\n';
 }

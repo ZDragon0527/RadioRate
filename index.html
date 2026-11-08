@@ -608,9 +608,11 @@
   <script>
     // =========================================================================
     // 1. PLANT METADATA & REFERENCE VALUES
-    //    측정값은 GitHub Actions가 공공데이터포털 API에서 수집한 data/radiation.json만 사용한다.
+    //    측정값은 GitHub Actions가 공공데이터포털 API에서 수집해 저장소 data 브랜치에 올린 radiation.json만 사용한다.
+    //    (Pages 배포와 분리: 같은 커밋 반복 배포가 사이트에 반영되지 않는 문제 대응, 2026-11)
+    //    raw 주소는 CDN이 최대 5분 캐시하므로 쿼리를 붙이지 않는다(원본 요청 한도 보호).
     // =========================================================================
-    const DATA_URL = 'data/radiation.json';
+    const DATA_URL = 'https://raw.githubusercontent.com/ZDragon0527/RadioRate/data/radiation.json';
     const CLIENT_REFRESH_SEC = 300;              // 브라우저가 JSON을 다시 읽는 주기(수집 주기는 워크플로에서 결정)
     const STALE_AFTER_MS = 60 * 60 * 1000;       // 마지막 수집 후 1시간이 지나면 '수신 지연' 표시(수집 주기 약 10분)
     const NATURAL_MIN = 0.05;
@@ -810,7 +812,7 @@
     // =========================================================================
     async function loadRadiationData(showNotification = false) {
       try {
-        const res = await fetch(`${DATA_URL}?_=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(DATA_URL, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
 

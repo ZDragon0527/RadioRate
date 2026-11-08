@@ -180,7 +180,7 @@ test('summary distinguishes fallback / no data / fatal and deployment failure; e
   const opts = { collectionResult: 'all_failed', collectOutcome: 'success', deploymentOutcome: 'failure', diagnosticsOutcome: 'success' };
   const summary = renderSummary(data, opts);
   assert.match(summary, /수집 성공: 0\/2/);
-  assert.match(summary, /Pages 배포: failure/);
+  assert.match(summary, /데이터 게시: failure/);
   assert.match(summary, /직전 값 유지/);
   assert.match(summary, /보존할 값 없음/);
   assert.ok(!summary.includes('<script>'));
@@ -205,5 +205,5 @@ test('summary CLI appends to the Actions summary and handles fatal runs without 
     ...f.env, GITHUB_STEP_SUMMARY: summaryPath, COLLECTION_RESULT: 'fatal',
     COLLECT_OUTCOME: 'failure', DEPLOYMENT_OUTCOME: 'skipped'
   } });
-  assert.match(await readFile(summaryPath, 'utf8'), /Pages 배포: skipped/);
+  assert.match(await readFile(summaryPath, 'utf8'), /데이터 게시: skipped/);
 });
